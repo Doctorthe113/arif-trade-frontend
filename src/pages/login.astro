@@ -1,0 +1,12 @@
+---
+// biome-ignore-all lint/correctness/noUnusedImports: Astro template imports
+import LoginPage from "@/components/app/login-page.client";
+import MainLayout from "@/layouts/main.astro";
+---
+
+<MainLayout
+	pageDescription="ATI control center login"
+	pageTitle="Login | ATI Control Center"
+>
+	<LoginPage client:only="react" />
+</MainLayout>

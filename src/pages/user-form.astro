@@ -1,0 +1,12 @@
+---
+// biome-ignore-all lint/correctness/noUnusedImports: Astro template imports
+import UserFormPage from "@/components/app/user-form-page.client";
+import MainLayout from "@/layouts/main.astro";
+---
+
+<MainLayout
+	pageDescription="ATI create or edit user"
+	pageTitle="User Form | ATI Control Center"
+>
+	<UserFormPage client:only="react" />
+</MainLayout>

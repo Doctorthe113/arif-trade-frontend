@@ -1,17 +1,25 @@
 ---
 import "../styles/global.css";
-const { content } = Astro.props;
 ---
 
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<title>{content.title}</title>
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href={`${import.meta.env.BASE_URL ?? "/"}favicon.svg`}
+		/>
+		<link rel="icon" href={`${import.meta.env.BASE_URL ?? "/"}favicon.ico`} />
+		<meta name="generator" content={Astro.generator} />
+		<meta
+			name="description"
+			content={Astro.props.pageDescription ?? "ATI static admin frontend"}
+		/>
+		<title>{Astro.props.pageTitle ?? "ATI Control Center"}</title>
 	</head>
-	<body>
+	<body class="min-h-screen bg-background text-foreground antialiased">
 		<slot />
 	</body>
 </html>

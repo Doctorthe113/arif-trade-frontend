@@ -1,13 +1,27 @@
-# Astro with Tailwind
+# ATI static admin frontend
+
+Static Astro admin app. Client-only auth/data. React islands for interactive UI. React Query for fetching. React Hook Form + Zod + shadcn for forms.
+
+## Env
+
+Backend URL is build-time resolved from public env:
 
 ```sh
-bun create astro@latest -- --template with-tailwindcss
+PUBLIC_API_BASE_URL=http://localhost/arif_trade_international/restAPI
 ```
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/with-tailwindcss)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/with-tailwindcss)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/with-tailwindcss/devcontainer.json)
+Create one of these before build:
 
-Astro comes with [Tailwind](https://tailwindcss.com) support out of the box. This example showcases how to style your Astro project with Tailwind.
+- `.env`
+- `.env.production`
 
-For complete setup instructions, please see our [Tailwind Styling Guide](https://docs.astro.build/en/guides/styling/#tailwind).
+`.env` files are ignored. Keep `.env.example` as template.
+
+## Commands
+
+```sh
+bun run dev
+bun run build
+bun run format
+bun run lint
+```
