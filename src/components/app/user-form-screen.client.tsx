@@ -147,9 +147,9 @@ export default function UserFormScreen() {
       titleValue={isEditModeValue ? "Edit user" : "Create user"}
     >
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        <Card>
+        <Card className="border-border/80 bg-card/95">
           <CardHeader>
-            <CardTitle>
+            <CardTitle data-ati-display="true">
               {isEditModeValue ? "Edit account" : "Create account"}
             </CardTitle>
             <CardDescription>
@@ -371,9 +371,9 @@ export default function UserFormScreen() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/80 bg-card/95">
           <CardHeader>
-            <CardTitle>Guidance</CardTitle>
+            <CardTitle data-ati-display="true">Guidance</CardTitle>
             <CardDescription>
               Phase 1 only covers users and auth.
             </CardDescription>

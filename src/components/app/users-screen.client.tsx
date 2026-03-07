@@ -136,9 +136,9 @@ export default function UsersScreen() {
       titleValue="Users"
     >
       <div className="grid gap-6">
-        <Card>
+        <Card className="border-border/80 bg-card/95">
           <CardHeader>
-            <CardTitle>User directory</CardTitle>
+            <CardTitle data-ati-display="true">User directory</CardTitle>
             <CardDescription>
               Role filter is server-backed. Search filters current page
               instantly.
@@ -200,7 +200,7 @@ export default function UsersScreen() {
               </Button>
             </div>
 
-            <Card className="gap-0 overflow-hidden border-dashed">
+            <Card className="gap-0 overflow-hidden border-border/80 bg-background/45">
               <CardContent className="px-0">
                 {usersQueryValue.isLoading ? (
                   <div className="grid gap-3 p-6">

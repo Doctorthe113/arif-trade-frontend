@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { getApiErrorMessageValue } from "@/lib/api-client";
-import { buildAppPath, getApiBaseUrl } from "@/lib/app-config";
+import { buildAppPath } from "@/lib/app-config";
 
 const loginSchemaValue = z.object({
   email: z.email("Enter a valid email."),
@@ -55,9 +55,9 @@ export default function LoginScreen() {
   });
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_30%),linear-gradient(180deg,_rgba(248,250,252,1),_rgba(239,246,255,1))] px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <Card className="border-emerald-200/70 bg-card/90 shadow-xl backdrop-blur">
+    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center justify-center">
+        <Card className="w-full max-w-[32rem] border-border/80 bg-card/95">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-primary/10 p-3 text-primary">
@@ -67,43 +67,16 @@ export default function LoginScreen() {
                 <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.28em]">
                   Arif Trade International
                 </p>
-                <CardTitle className="mt-2 text-4xl tracking-tight">
-                  Medical operations admin
+                <CardTitle
+                  className="mt-2 text-[2.4rem] tracking-tight"
+                  data-ati-display="true"
+                >
+                  Sign in
                 </CardTitle>
               </div>
             </div>
-            <CardDescription className="max-w-2xl text-base">
-              Static admin frontend. Client-only auth and data. Build-time API
-              binding.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border bg-background/80 p-4">
-              <p className="font-medium">Role-safe</p>
-              <p className="mt-2 text-muted-foreground text-sm">
-                `superadmin`, `editor`, `viewer`, `salesman` workflows.
-              </p>
-            </div>
-            <div className="rounded-2xl border bg-background/80 p-4">
-              <p className="font-medium">Static deploy</p>
-              <p className="mt-2 text-muted-foreground text-sm">
-                GitHub Pages friendly. No server rendering.
-              </p>
-            </div>
-            <div className="rounded-2xl border bg-background/80 p-4">
-              <p className="font-medium">API source</p>
-              <p className="mt-2 break-all text-muted-foreground text-sm">
-                {getApiBaseUrl()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>
-              Authenticate with PHP REST API using JWT bearer token.
+            <CardDescription className="max-w-md text-sm leading-6">
+              Access the internal operations dashboard using your ATI account.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -124,7 +97,7 @@ export default function LoginScreen() {
                         type="email"
                       />
                       <FieldDescription>
-                        Use your registered ATI account.
+                        Use your assigned work email.
                       </FieldDescription>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
@@ -147,7 +120,7 @@ export default function LoginScreen() {
                         type="password"
                       />
                       <FieldDescription>
-                        Token lasts 8 hours after sign in.
+                        Session refresh is handled automatically.
                       </FieldDescription>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />

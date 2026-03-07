@@ -42,7 +42,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { buildAppPath, getApiBaseUrl } from "@/lib/app-config";
+import { buildAppPath } from "@/lib/app-config";
 import {
   formatRelativeMinutesValue,
   getRoleLabelValue,
@@ -154,18 +154,23 @@ export default function AppShell({
   const currentUserValue = currentUserQueryValue.data ?? sessionValue.user;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.12),_transparent_28%),linear-gradient(180deg,_rgba(248,250,252,1),_rgba(241,245,249,1))]">
+    <div className="min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-7xl gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <aside className="hidden w-72 shrink-0 lg:block">
-          <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-3xl border bg-card/90 p-5 shadow-sm backdrop-blur">
+          <div className="sticky top-4 flex h-[calc(100vh-2rem)] flex-col rounded-3xl border border-border/80 bg-sidebar p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.24em]">
                   Arif Trade International
                 </p>
-                <h1 className="mt-2 font-semibold text-2xl">Control Center</h1>
+                <h1
+                  className="mt-2 font-semibold text-2xl"
+                  data-ati-display="true"
+                >
+                  Control Center
+                </h1>
               </div>
-              <Badge variant="secondary">Static</Badge>
+              <Badge variant="outline">Phase 1</Badge>
             </div>
             <div className="mt-8 flex flex-col gap-3">
               <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.22em]">
@@ -173,7 +178,7 @@ export default function AppShell({
               </p>
               <NavListValue />
             </div>
-            <div className="mt-auto rounded-2xl border bg-background/70 p-4">
+            <div className="mt-auto rounded-2xl border border-border/80 bg-background/70 p-4">
               <div className="flex items-center gap-3">
                 <Avatar size="lg">
                   <AvatarFallback>
@@ -207,7 +212,7 @@ export default function AppShell({
         </aside>
 
         <div className="flex min-h-screen flex-1 flex-col gap-6">
-          <header className="sticky top-4 z-10 rounded-3xl border bg-card/90 p-4 shadow-sm backdrop-blur">
+          <header className="sticky top-4 z-10 rounded-3xl border border-border/80 bg-card/95 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
                 <Sheet>
@@ -233,7 +238,10 @@ export default function AppShell({
                   <p className="font-medium text-muted-foreground text-xs uppercase tracking-[0.22em]">
                     Phase 1
                   </p>
-                  <h2 className="mt-1 font-semibold text-2xl tracking-tight">
+                  <h2
+                    className="mt-1 font-semibold text-2xl tracking-tight"
+                    data-ati-display="true"
+                  >
                     {titleValue}
                   </h2>
                   <p className="mt-1 max-w-2xl text-muted-foreground text-sm">
@@ -243,7 +251,6 @@ export default function AppShell({
               </div>
 
               <div className="flex items-center gap-3 self-start">
-                <Badge variant="secondary">API: {getApiBaseUrl()}</Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline">

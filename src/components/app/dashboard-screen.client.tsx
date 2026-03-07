@@ -43,10 +43,14 @@ function MetricCardValue({
   valueValue: string;
 }) {
   return (
-    <Card>
+    <Card className="border-border/80 bg-card/95">
       <CardHeader>
-        <CardDescription>{titleValue}</CardDescription>
-        <CardTitle className="text-3xl tracking-tight">{valueValue}</CardTitle>
+        <CardDescription className="text-[0.72rem] uppercase tracking-[0.18em]">
+          {titleValue}
+        </CardDescription>
+        <CardTitle className="text-3xl tracking-tight" data-ati-display="true">
+          {valueValue}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-muted-foreground text-sm">{descriptionValue}</p>
@@ -106,9 +110,9 @@ export default function DashboardScreen() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <Card>
+          <Card className="border-border/80 bg-card/95">
             <CardHeader>
-              <CardTitle>System connection</CardTitle>
+              <CardTitle data-ati-display="true">System connection</CardTitle>
               <CardDescription>
                 Confirms static frontend can reach backend docs and health
                 endpoints.
@@ -144,9 +148,9 @@ export default function DashboardScreen() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border/80 bg-card/95">
             <CardHeader>
-              <CardTitle>Quick actions</CardTitle>
+              <CardTitle data-ati-display="true">Quick actions</CardTitle>
               <CardDescription>
                 Phase 1 shortcuts for superadmin workflows.
               </CardDescription>
