@@ -15,7 +15,7 @@ Mirrors the backend resource model and permission boundaries.
 ## Stack
 
 - **Framework**: Vite 7 + TanStack Router (file-based routing via `@tanstack/router-plugin/vite`).
-- **Rendering**: 100% client-side SPA. No SSR, no prerendering.
+- **Rendering**: 100% client-side SPA. No SSR.
 - **UI**: React 19, shadcn/ui components in `src/components/ui/`.
 - **Styling**: Tailwind CSS v4 with `@theme inline` CSS custom properties.
 - **Data fetching**: `@tanstack/react-query` via `apiFetch()` wrapper in `src/lib/api.ts`.
@@ -36,7 +36,7 @@ StrictMode > QueryClientProvider > AuthProvider > RouterProvider
 
 - `QueryClientProvider` uses a shared `QueryClient` from `src/integrations/tanstack-query/root-provider.tsx`.
 - `AuthProvider` (`src/lib/auth.tsx`) manages JWT auth state via `localStorage`.
-- `RouterProvider` uses the file-based route tree from `src/router.tsx`.
+- `RouterProvider` uses the file-based route tree from `src/router.tsx` (generated).
 
 ### Auth
 
@@ -200,8 +200,8 @@ The previous implementation plan described Astro pages, client-only islands, and
 Key changes:
 
 - Astro is no longer the rendering shell.
-- Route files now live under TanStack Start file routing.
-- Static generation is handled by TanStack Start prerendering, not Astro static output.
+- Route files now live under TanStack Router file routing.
+- Deployment is a standard React SPA, not Astro static output.
 - Shared app framing now lives in React route components and shadcn sidebar composition.
 
 ## Files of Interest
@@ -211,10 +211,10 @@ Key changes:
 - `vite.config.ts`
 - `src/routes/__root.tsx`
 - `src/routes/index.tsx`
-- `src/routes/about.tsx`
-- `src/routes/superadmin.tsx`
-- `src/routes/salesman.tsx`
-- `src/routes/doctor-customers.tsx`
+- `src/routes/login.tsx`
+- `src/routes/admin/route.tsx`
+- `src/routes/salesman/route.tsx`
+- `src/routes/doctor-customer.tsx`
 
 ### Shared UI shell
 
