@@ -23,34 +23,40 @@ Phase 1 implementation of the Arif Trade International (ATI) medical operations 
 - **`AuthProvider`**: A React Context provider that wraps the app to provide `sessionValue` and `currentUserValue`. It synchronizes the auth state with `localStorage` and provides hooks like `useAuthValue()` and `useLoginMutationValue()`.
 
 ### 3. Application Shell (`src/components/app/app-shell.client.tsx`)
-The **App Shell** is the persistent frame for all authenticated views. It serves several critical purposes:
-- **Protected Layout**: It wraps every internal screen (Dashboard, Users, etc.) providing a unified Sidebar and Topbar.
-- **Session Enforcement**: It checks `sessionValue` on mount; if missing, it forces a redirect to `/login`.
-- **Navigation Control**: Manages the active state of sidebar links and provides a mobile-responsive "Sheet" menu for smaller devices.
-- **Global Actions**: Houses the "Logout" functionality and the user profile dropdown.
+The **App Shell** is the persistent frame for all authenticated views.
+- **Protected Layout**: It wraps all internal screens in a shared base layout built from shadcn sidebar primitives.
+- **Session Enforcement**: It checks `sessionValue` on mount; if missing, it redirects to `/login`.
+- **Persistent Navigation**: The sidebar and header stay mounted while only the content pane changes.
+- **Global Actions**: It keeps the user summary and logout action inside the sidebar footer.
 
-### 4. Screen Components (`src/components/app/*-screen.client.tsx`)
-Each major feature has its own "Screen" component. These are imported by Astro pages and are the primary "Islands" of interactivity.
-- **`dashboard-screen.client.tsx`**: Provides an overview of the system, including API health status and quick-access metrics.
+### 4. Application Router (`src/components/app/app-router.client.tsx`)
+- **Client-side navigation**: Authenticated routes (`/dashboard`, `/users`, `/user-form`) are handled by a lightweight history-based router.
+- **Shared shell**: Route changes update the content pane without tearing down the shell.
+- **Direct route support**: Astro pages still exist for each URL so refresh and direct loads continue to work in static hosting.
+
+### 5. Screen Components (`src/components/app/*-screen.client.tsx`)
+Each major feature has its own screen component. These are now content views rendered inside the shared shell.
+- **`dashboard-screen.client.tsx`**: Provides an operational overview focused on backend connectivity and admin actions. JWT/session internals are no longer exposed on the home screen.
 - **`users-screen.client.tsx`**: Implements the users management table. It handles complex client-side features like search filtering alongside server-side role filtering and pagination.
-- **`user-form-screen.client.tsx`**: A dual-purpose form for creating and editing users. It uses `URLSearchParams` to detect "Edit Mode" and pre-populate data from the API.
+- **`user-form-screen.client.tsx`**: A dual-purpose form for creating and editing users. It reads the current client-route search params to detect edit mode and pre-populate data from the API.
 
-### 5. UI Primitives (`src/components/ui/`)
-Standard shadcn/ui components (Buttons, Inputs, Cards, etc.).
+### 6. UI Primitives (`src/components/ui/`)
+Standard shadcn/ui components (Buttons, Inputs, Cards, Sidebar, etc.).
 - **`field.tsx`**: A highly customized wrapper for `react-hook-form`. It integrates labels, descriptions, and error messages into a single accessible structure (using `fieldset` and `role="alert"`), reducing boilerplate in screen components.
+- **`sidebar.tsx`**: The shadcn sidebar foundation used by the authenticated workspace layout.
 
 ## Routing Strategy
 
-To avoid the overhead of heavy client-side routers (like `react-router`), we use **Astro-native routing**.
-- Each `.astro` file in `src/pages/` represents a physical route.
-- Each page imports a corresponding `*-page.client.tsx` wrapper.
-- These wrappers provide the `AppProviders` context (QueryClient, Auth, Theme) to the specific "Screen" component.
-- This results in **multi-page application (MPA)** behavior with the **speed of a single-page application (SPA)** interactivity within each view.
+Authenticated app routes now use a **hybrid Astro + client-router model**.
+- Each `.astro` file in `src/pages/` still exists as a physical route for static output and direct loads.
+- `/dashboard`, `/users`, and `/user-form` all mount the same authenticated React entrypoint.
+- Inside that entrypoint, a lightweight history-based router updates content with `pushState` and `popstate` instead of full page reloads.
+- `/login` remains a separate route outside the authenticated shell.
 
 ## Component Strategy
 
-- **Astro Pages**: Thin shells importing individual React "Page" components with `client:only="react"`.
-- **shadcn/ui**: Modified primitives (e.g., `field.tsx`) to support complex form layouts and accessible error reporting.
+- **Astro Pages**: Thin shells importing the authenticated app entrypoint or the login entrypoint with `client:only="react"`.
+- **shadcn/ui**: Modified primitives plus the shadcn sidebar for the persistent workspace frame.
 - **Icons**: Lucide React for consistent visual language.
 
 ## Development
@@ -58,10 +64,11 @@ To avoid the overhead of heavy client-side routers (like `react-router`), we use
 ### Environment Setup
 Create a `.env` file based on `.env.example`:
 ```env
-PUBLIC_API_BASE_URL=http://localhost/arif_trade_international/restAPI
+PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
 ### Commands
+- `./start-dev.sh`: Start Dockerized Apache backend and MySQL.
 - `bun run dev`: Start development server.
 - `bun run build`: Generate static production build in `dist/`.
 - `bun run format`: Format and lint check via Biome.
@@ -71,3 +78,4 @@ PUBLIC_API_BASE_URL=http://localhost/arif_trade_international/restAPI
 - **No SSR**: The app is 100% static for simple hosting. All data fetching occurs on the client via React Query.
 - **CamelCase**: While the PHP backend uses snake_case, the frontend strictly uses camelCase to match TypeScript idiomatic style.
 - **shadcn Overrides**: Custom `Field` component wrapper used in [src/components/ui/field.tsx](src/components/ui/field.tsx) for integrated RHF + Shadcn labels/inputs.
+- **No session telemetry on home**: JWT and session mechanics stay internal to auth and API layers. The dashboard now shows operational workspace information instead.

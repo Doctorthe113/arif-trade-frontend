@@ -4,11 +4,14 @@ set -euo pipefail
 
 scriptDirPath="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 apiDirPath="${scriptDirPath}/arif_trade_international/restAPI"
-apiRouterPath="${apiDirPath}/dev-router.php"
+sqlInitDirPath="${apiDirPath}/sql"
+schemaSqlPath="${sqlInitDirPath}/001_schema.sql"
+seedSqlPath="${sqlInitDirPath}/002_seed.sql"
 mysqlServiceName="mysql"
+backendServiceName="backend"
 mysqlDatabaseName="ati_db"
-phpHostValue="127.0.0.1"
-phpPortValue="8000"
+apiHostValue="127.0.0.1"
+apiPortValue="8000"
 adminEmailValue="admin@ati.local"
 adminPasswordValue="Admin@1234"
 
@@ -26,16 +29,23 @@ if ! docker info >/dev/null 2>&1; then
 	exit 1
 fi
 
-if ! command -v php >/dev/null 2>&1; then
-	echo "Error: php is not installed or not in PATH."
+if ! command -v curl >/dev/null 2>&1; then
+	echo "Error: curl is not installed or not in PATH."
 	exit 1
 fi
 
-echo "Starting MySQL container with Docker Compose..."
-docker compose up -d "${mysqlServiceName}"
+echo "Starting backend and MySQL containers with Docker Compose..."
+
+docker compose up -d --build "${mysqlServiceName}" "${backendServiceName}"
 
 echo "Waiting for MySQL to accept connections..."
 for attemptIndex in {1..60}; do
+	if ! docker compose ps --status running --services | grep -qx "${mysqlServiceName}"; then
+		echo "Error: MySQL container is not running. Recent logs:"
+		docker compose logs --tail=60 "${mysqlServiceName}" || true
+		exit 1
+	fi
+
 	if docker compose exec -T "${mysqlServiceName}" mysqladmin ping -uroot --silent >/dev/null 2>&1; then
 		echo "MySQL is ready."
 		break
@@ -43,6 +53,42 @@ for attemptIndex in {1..60}; do
 
 	if [[ "${attemptIndex}" == "60" ]]; then
 		echo "Error: MySQL did not become ready in time."
+		echo "Recent MySQL logs:"
+		docker compose logs --tail=60 "${mysqlServiceName}" || true
+		exit 1
+	fi
+
+	sleep 2
+done
+
+echo "Ensuring database schema exists..."
+usersTableExistsValue="$({
+	docker compose exec -T "${mysqlServiceName}" mysql -uroot -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${mysqlDatabaseName}' AND table_name='users';" 2>/dev/null || true
+} | tr -d '[:space:]')"
+
+if [[ "${usersTableExistsValue}" != "1" ]]; then
+	echo "Initializing database schema and seed data..."
+	docker compose exec -T "${mysqlServiceName}" mysql -uroot < "${schemaSqlPath}"
+	docker compose exec -T "${mysqlServiceName}" mysql -uroot < "${seedSqlPath}"
+fi
+
+echo "Waiting for Apache backend to accept requests..."
+for attemptIndex in {1..60}; do
+	if ! docker compose ps --status running --services | grep -qx "${backendServiceName}"; then
+		echo "Error: Backend container is not running. Recent logs:"
+		docker compose logs --tail=60 "${backendServiceName}" || true
+		exit 1
+	fi
+
+	if curl --fail --silent "http://${apiHostValue}:${apiPortValue}/health" >/dev/null 2>&1; then
+		echo "Apache backend is ready."
+		break
+	fi
+
+	if [[ "${attemptIndex}" == "60" ]]; then
+		echo "Error: Backend did not become ready in time."
+		echo "Recent backend logs:"
+		docker compose logs --tail=60 "${backendServiceName}" || true
 		exit 1
 	fi
 
@@ -50,7 +96,7 @@ for attemptIndex in {1..60}; do
 done
 
 echo "Ensuring seeded admin account is usable..."
-adminPasswordHashValue="$(php -r 'echo password_hash("Admin@1234", PASSWORD_BCRYPT, ["cost" => 12]);')"
+adminPasswordHashValue="$(docker compose exec -T "${backendServiceName}" php -r 'echo password_hash("Admin@1234", PASSWORD_BCRYPT, ["cost" => 12]);')"
 
 docker compose exec -T "${mysqlServiceName}" mysql -uroot "${mysqlDatabaseName}" <<SQL
 INSERT INTO users (name, email, password_hash, role, is_active)
@@ -65,14 +111,10 @@ SQL
 echo ""
 echo "✓ Services ready:"
 echo "  - MySQL: 127.0.0.1:3306 (user: root, no password)"
-echo "  - PHP API: http://${phpHostValue}:${phpPortValue}"
-echo "  - API Health: http://${phpHostValue}:${phpPortValue}/health"
-echo "  - API Spec: http://${phpHostValue}:${phpPortValue}/spec"
+echo "  - Apache API: http://${apiHostValue}:${apiPortValue}"
+echo "  - API Health: http://${apiHostValue}:${apiPortValue}/health"
+echo "  - API Spec: http://${apiHostValue}:${apiPortValue}/spec"
 echo "  - Login: ${adminEmailValue} / ${adminPasswordValue}"
 echo ""
-echo "Frontend .env value: PUBLIC_API_BASE_URL=http://${phpHostValue}:${phpPortValue}"
-echo "Stop MySQL later with: docker compose down"
-echo ""
-echo "Starting PHP development server..."
-
-ATI_ENV=development php -S "${phpHostValue}:${phpPortValue}" -t "${apiDirPath}" "${apiRouterPath}"
+echo "Frontend .env value: PUBLIC_API_BASE_URL=http://${apiHostValue}:${apiPortValue}"
+echo "Stop services later with: docker compose down"
