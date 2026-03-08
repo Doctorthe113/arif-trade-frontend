@@ -3,7 +3,6 @@ import type { LucideIcon } from "lucide-react";
 
 import ThemeToggle from "#/components/ThemeToggle";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
-import { Separator } from "#/components/ui/separator";
 import {
 	Sidebar,
 	SidebarContent,
@@ -61,7 +60,7 @@ export function AppLayout({
 									</div>
 									<div className="grid flex-1 text-left text-sm leading-tight">
 										<span className="truncate font-semibold">
-											ATI Control Center
+											ATI Dashboard
 										</span>
 										<span className="truncate text-xs">{roleLabel}</span>
 									</div>
@@ -100,7 +99,7 @@ export function AppLayout({
 				<SidebarFooter>
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<SidebarMenuButton size="lg">
+							<SidebarMenuButton size="lg" className="hover:bg-accent/50">
 								<Avatar className="size-8 rounded-lg">
 									<AvatarFallback className="rounded-lg">
 										{roleLabel.slice(0, 2).toUpperCase()}
@@ -121,9 +120,8 @@ export function AppLayout({
 			</Sidebar>
 
 			<SidebarInset>
-				<header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+				<header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
 					<SidebarTrigger className="-ml-1" />
-					<Separator orientation="vertical" className="mr-2 h-4" />
 					<span className="text-sm font-medium">{breadcrumb}</span>
 				</header>
 				<main className="flex-1 p-4 md:p-6">
