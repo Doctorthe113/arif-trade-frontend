@@ -10,6 +10,7 @@ import {
 } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 export const Route = createFileRoute("/login")({
 	component: LoginPage,
@@ -23,6 +24,11 @@ function LoginPage() {
 	const [passwordValue, setPasswordValue] = useState("");
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	if (isAuthDisabled) {
+		void navigate({ to: "/salesman/overview" });
+		return null;
+	}
 
 	if (isAuthenticated) {
 		void navigate({ to: "/" });

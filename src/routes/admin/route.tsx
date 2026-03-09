@@ -12,6 +12,7 @@ import {
 
 import { AppLayout } from "#/components/app/app-layout";
 import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 export const Route = createFileRoute("/admin")({
 	component: AdminLayout,
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
 	const { hasRole } = useAuth();
 
-	if (!hasRole("superadmin")) return <Navigate to="/" />;
+	if (!isAuthDisabled && !hasRole("superadmin")) return <Navigate to="/" />;
 
 	const navGroups = [
 		{

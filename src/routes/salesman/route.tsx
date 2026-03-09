@@ -12,6 +12,7 @@ import {
 
 import { AppLayout } from "#/components/app/app-layout";
 import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 export const Route = createFileRoute("/salesman")({
 	component: SalesmanLayout,
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/salesman")({
 /// Salesman dashboard layout
 function SalesmanLayout() {
 	const { hasRole } = useAuth();
+	const showAdminNav = isAuthDisabled || hasRole("superadmin");
 
 	const navGroups = [
 		{
@@ -40,7 +42,7 @@ function SalesmanLayout() {
 				},
 			],
 		},
-		...(hasRole("superadmin")
+		...(showAdminNav
 			? [
 					{
 						label: "Admin",

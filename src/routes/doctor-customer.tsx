@@ -10,6 +10,7 @@ import {
 } from "#/components/ui/card";
 import { apiFetch } from "#/lib/api";
 import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 export const Route = createFileRoute("/doctor-customer")({
 	component: DoctorCustomerPage,
@@ -59,7 +60,7 @@ function DoctorCustomerPage() {
 		0,
 	);
 
-	if (!hasRole("doctor")) return <Navigate to="/" />;
+	if (!isAuthDisabled && !hasRole("doctor")) return <Navigate to="/" />;
 
 	return (
 		<div className="min-h-screen p-6">

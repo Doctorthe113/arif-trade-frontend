@@ -249,6 +249,51 @@ Key changes:
 
 The backend remains in `arif_trade_international/restAPI/` and should continue to be started through the repo’s existing local workflow, including `start-dev.sh` when Dockerized services are needed.
 
+## Temporary Auth Bypass (Local Dev)
+
+To work on protected routes without logging in repeatedly, the frontend now supports a temporary client-side bypass flag.
+
+### Env flag
+
+- Use `VITE_DISABLE_AUTH=true` in `.env` to bypass auth checks in the SPA.
+- Default in `.env.example` is `VITE_DISABLE_AUTH=false`.
+- This is frontend-only behavior. Backend auth/middleware stays unchanged.
+
+### What bypass changes
+
+When `VITE_DISABLE_AUTH=true`:
+
+- `/` always redirects to `/salesman/overview`.
+- `/login` is skipped and redirects to `/salesman/overview`.
+- `/admin/*` route guard is bypassed (admin pages open for local dev).
+- `/doctor-customer` doctor-role guard is bypassed.
+- Salesman sidebar shows admin links for faster local navigation.
+
+### Affected frontend files
+
+- `src/lib/auth-flags.ts`
+- `src/routes/index.tsx`
+- `src/routes/login.tsx`
+- `src/routes/admin/route.tsx`
+- `src/routes/doctor-customer.tsx`
+- `src/routes/salesman/route.tsx`
+- `.env`
+- `.env.example`
+
+### Safety notes
+
+- Do not enable this in production.
+- Treat bypass mode as local development convenience only.
+- API calls that require valid JWT may still fail at backend level if endpoints are strictly protected.
+
+### How to revert auth bypass
+
+1. Set `VITE_DISABLE_AUTH=false` in `.env`.
+2. Restart frontend dev server (`bun run dev`) so Vite reloads env values.
+3. Clear browser storage key `ati_auth` if you want a clean auth state.
+4. Visit `/` and confirm app returns to normal auth flow (`/login` when unauthenticated).
+5. Confirm `/admin/*` and `/doctor-customer` are protected again.
+
 ## Next Implementation Layer
 
 The migration establishes structure, not full live data wiring yet.
