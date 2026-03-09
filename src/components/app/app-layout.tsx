@@ -1,7 +1,7 @@
 import { Link, Outlet, useMatchRoute } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
 
-import ThemeToggle from "#/components/ThemeToggle";
+import ThemeToggle from "#/components/theme-toggle";
 import { Avatar, AvatarFallback } from "#/components/ui/avatar";
 import {
 	Sidebar,

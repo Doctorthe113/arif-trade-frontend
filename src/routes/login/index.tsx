@@ -12,7 +12,7 @@ import { Input } from "#/components/ui/input";
 import { useAuth } from "#/lib/auth";
 import { isAuthDisabled } from "#/lib/auth-flags";
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/login/")({
 	component: LoginPage,
 });
 
@@ -45,7 +45,7 @@ function LoginPage() {
 		} catch (error) {
 			setErrorMessage(
 				error instanceof Error ? error.message : "Unable to sign in",
-			);
+			)
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -102,5 +102,5 @@ function LoginPage() {
 				</CardContent>
 			</Card>
 		</div>
-	);
+	)
 }

@@ -9,12 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DoctorCustomerRouteImport } from './routes/doctor-customer'
 import { Route as SalesmanRouteRouteImport } from './routes/salesman/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SalesmanIndexRouteImport } from './routes/salesman/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as DoctorCustomerIndexRouteImport } from './routes/doctor-customer/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as SalesmanTransactionRouteImport } from './routes/salesman/transaction'
 import { Route as SalesmanQuoteRouteImport } from './routes/salesman/quote'
@@ -24,16 +24,6 @@ import { Route as SalesmanInventoryRouteImport } from './routes/salesman/invento
 import { Route as AdminUpdateUserRouteImport } from './routes/admin/update-user'
 import { Route as AdminCreateUserRouteImport } from './routes/admin/create-user'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DoctorCustomerRoute = DoctorCustomerRouteImport.update({
-  id: '/doctor-customer',
-  path: '/doctor-customer',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SalesmanRouteRoute = SalesmanRouteRouteImport.update({
   id: '/salesman',
   path: '/salesman',
@@ -53,6 +43,16 @@ const SalesmanIndexRoute = SalesmanIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SalesmanRouteRoute,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DoctorCustomerIndexRoute = DoctorCustomerIndexRouteImport.update({
+  id: '/doctor-customer/',
+  path: '/doctor-customer/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -99,8 +99,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/salesman': typeof SalesmanRouteRouteWithChildren
-  '/doctor-customer': typeof DoctorCustomerRoute
-  '/login': typeof LoginRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/update-user': typeof AdminUpdateUserRoute
   '/salesman/inventory': typeof SalesmanInventoryRoute
@@ -109,12 +107,12 @@ export interface FileRoutesByFullPath {
   '/salesman/quote': typeof SalesmanQuoteRoute
   '/salesman/transaction': typeof SalesmanTransactionRoute
   '/admin/': typeof AdminIndexRoute
+  '/doctor-customer/': typeof DoctorCustomerIndexRoute
+  '/login/': typeof LoginIndexRoute
   '/salesman/': typeof SalesmanIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/doctor-customer': typeof DoctorCustomerRoute
-  '/login': typeof LoginRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/update-user': typeof AdminUpdateUserRoute
   '/salesman/inventory': typeof SalesmanInventoryRoute
@@ -123,6 +121,8 @@ export interface FileRoutesByTo {
   '/salesman/quote': typeof SalesmanQuoteRoute
   '/salesman/transaction': typeof SalesmanTransactionRoute
   '/admin': typeof AdminIndexRoute
+  '/doctor-customer': typeof DoctorCustomerIndexRoute
+  '/login': typeof LoginIndexRoute
   '/salesman': typeof SalesmanIndexRoute
 }
 export interface FileRoutesById {
@@ -130,8 +130,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/salesman': typeof SalesmanRouteRouteWithChildren
-  '/doctor-customer': typeof DoctorCustomerRoute
-  '/login': typeof LoginRoute
   '/admin/create-user': typeof AdminCreateUserRoute
   '/admin/update-user': typeof AdminUpdateUserRoute
   '/salesman/inventory': typeof SalesmanInventoryRoute
@@ -140,6 +138,8 @@ export interface FileRoutesById {
   '/salesman/quote': typeof SalesmanQuoteRoute
   '/salesman/transaction': typeof SalesmanTransactionRoute
   '/admin/': typeof AdminIndexRoute
+  '/doctor-customer/': typeof DoctorCustomerIndexRoute
+  '/login/': typeof LoginIndexRoute
   '/salesman/': typeof SalesmanIndexRoute
 }
 export interface FileRouteTypes {
@@ -148,8 +148,6 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/salesman'
-    | '/doctor-customer'
-    | '/login'
     | '/admin/create-user'
     | '/admin/update-user'
     | '/salesman/inventory'
@@ -158,12 +156,12 @@ export interface FileRouteTypes {
     | '/salesman/quote'
     | '/salesman/transaction'
     | '/admin/'
+    | '/doctor-customer/'
+    | '/login/'
     | '/salesman/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/doctor-customer'
-    | '/login'
     | '/admin/create-user'
     | '/admin/update-user'
     | '/salesman/inventory'
@@ -172,14 +170,14 @@ export interface FileRouteTypes {
     | '/salesman/quote'
     | '/salesman/transaction'
     | '/admin'
+    | '/doctor-customer'
+    | '/login'
     | '/salesman'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/salesman'
-    | '/doctor-customer'
-    | '/login'
     | '/admin/create-user'
     | '/admin/update-user'
     | '/salesman/inventory'
@@ -188,6 +186,8 @@ export interface FileRouteTypes {
     | '/salesman/quote'
     | '/salesman/transaction'
     | '/admin/'
+    | '/doctor-customer/'
+    | '/login/'
     | '/salesman/'
   fileRoutesById: FileRoutesById
 }
@@ -195,26 +195,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   SalesmanRouteRoute: typeof SalesmanRouteRouteWithChildren
-  DoctorCustomerRoute: typeof DoctorCustomerRoute
-  LoginRoute: typeof LoginRoute
+  DoctorCustomerIndexRoute: typeof DoctorCustomerIndexRoute
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/doctor-customer': {
-      id: '/doctor-customer'
-      path: '/doctor-customer'
-      fullPath: '/doctor-customer'
-      preLoaderRoute: typeof DoctorCustomerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/salesman': {
       id: '/salesman'
       path: '/salesman'
@@ -242,6 +228,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/salesman/'
       preLoaderRoute: typeof SalesmanIndexRouteImport
       parentRoute: typeof SalesmanRouteRoute
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/doctor-customer/': {
+      id: '/doctor-customer/'
+      path: '/doctor-customer'
+      fullPath: '/doctor-customer/'
+      preLoaderRoute: typeof DoctorCustomerIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -344,8 +344,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   SalesmanRouteRoute: SalesmanRouteRouteWithChildren,
-  DoctorCustomerRoute: DoctorCustomerRoute,
-  LoginRoute: LoginRoute,
+  DoctorCustomerIndexRoute: DoctorCustomerIndexRoute,
+  LoginIndexRoute: LoginIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

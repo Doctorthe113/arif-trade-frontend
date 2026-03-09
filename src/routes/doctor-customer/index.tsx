@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import ThemeToggle from "#/components/ThemeToggle";
+import ThemeToggle from "#/components/theme-toggle";
 import { Button } from "#/components/ui/button";
 import {
 	Card,
@@ -12,7 +12,7 @@ import { apiFetch } from "#/lib/api";
 import { useAuth } from "#/lib/auth";
 import { isAuthDisabled } from "#/lib/auth-flags";
 
-export const Route = createFileRoute("/doctor-customer")({
+export const Route = createFileRoute("/doctor-customer/")({
 	component: DoctorCustomerPage,
 });
 
@@ -76,7 +76,7 @@ function DoctorCustomerPage() {
 					</div>
 					<div className="flex items-center gap-2">
 						<ThemeToggle />
-						<Button variant="outline" onClick={logout}>
+						<Button variant="outline" size={"sm"} onClick={logout}>
 							Sign Out
 						</Button>
 					</div>
