@@ -1,12 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import { DataTable } from "#/components/ui/data-table";
 import { Input } from "#/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select";
 import { apiFetch } from "#/lib/api";
 
 type UserListItem = {
@@ -15,6 +24,19 @@ type UserListItem = {
 	email: string;
 	role: string;
 	is_active: number;
+};
+
+type ApiResponse<T> = {
+	success: boolean;
+	message: string;
+	data: T;
+};
+
+type PaginatedResponse<T> = {
+	data: T[];
+	total: number;
+	current_page: number;
+	per_page: number;
 };
 
 const updateUserSchema = z.object({
@@ -38,10 +60,13 @@ function UpdateUserPage() {
 
 	const users = useQuery({
 		queryKey: ["users"],
-		queryFn: () => apiFetch<{ data: UserListItem[] }>("/users?per_page=100"),
+		queryFn: () =>
+			apiFetch<ApiResponse<PaginatedResponse<UserListItem>>>(
+				"/users?per_page=100",
+			),
 	});
 
-	const selectedUser = (users.data?.data ?? []).find(
+	const selectedUser = (users.data?.data?.data ?? []).find(
 		(u) => u.id === selectedUserId,
 	);
 
@@ -49,6 +74,7 @@ function UpdateUserPage() {
 		register,
 		handleSubmit,
 		reset,
+		control,
 		formState: { errors },
 	} = useForm<UpdateUserForm>({
 		resolver: zodResolver(updateUserSchema),
@@ -62,6 +88,38 @@ function UpdateUserPage() {
 				}
 			: undefined,
 	});
+
+	const columns: ColumnDef<UserListItem>[] = [
+		{ accessorKey: "id", header: "ID" },
+		{ accessorKey: "name", header: "Name" },
+		{ accessorKey: "email", header: "Email" },
+		{
+			accessorKey: "role",
+			header: "Role",
+			cell: ({ row }) => <span className="capitalize">{row.original.role}</span>,
+		},
+		{
+			accessorKey: "is_active",
+			header: "Active",
+			cell: ({ row }) => (row.original.is_active ? "Yes" : "No"),
+		},
+		{
+			id: "actions",
+			cell: ({ row }) => (
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={() => {
+						setSelectedUserId(row.original.id);
+						reset();
+						mutation.reset();
+					}}
+				>
+					Edit
+				</Button>
+			),
+		},
+	];
 
 	const mutation = useMutation({
 		mutationFn: (data: UpdateUserForm) => {
@@ -93,47 +151,7 @@ function UpdateUserPage() {
 					{users.isLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
 					) : (
-						<div className="overflow-auto">
-							<table className="w-full text-sm">
-								<thead>
-									<tr className="border-b text-left">
-										<th className="pb-2 font-medium">ID</th>
-										<th className="pb-2 font-medium">Name</th>
-										<th className="pb-2 font-medium">Email</th>
-										<th className="pb-2 font-medium">Role</th>
-										<th className="pb-2 font-medium">Active</th>
-										<th className="pb-2 font-medium" />
-									</tr>
-								</thead>
-								<tbody>
-									{(users.data?.data ?? []).map((u) => (
-										<tr
-											key={u.id}
-											className={`border-b ${selectedUserId === u.id ? "bg-accent" : ""}`}
-										>
-											<td className="py-2">{u.id}</td>
-											<td className="py-2">{u.name}</td>
-											<td className="py-2">{u.email}</td>
-											<td className="py-2 capitalize">{u.role}</td>
-											<td className="py-2">{u.is_active ? "Yes" : "No"}</td>
-											<td className="py-2">
-												<Button
-													variant="outline"
-													size="sm"
-													onClick={() => {
-														setSelectedUserId(u.id);
-														reset();
-														mutation.reset();
-													}}
-												>
-													Edit
-												</Button>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
+						<DataTable columns={columns} data={users.data?.data?.data ?? []} />
 					)}
 				</CardContent>
 			</Card>
@@ -189,16 +207,26 @@ function UpdateUserPage() {
 								<label htmlFor="role" className="text-sm font-medium">
 									Role
 								</label>
-								<select
-									id="role"
-									{...register("role")}
-									className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-								>
-									<option value="salesman">Salesman</option>
-									<option value="viewer">Viewer</option>
-									<option value="editor">Editor</option>
-									<option value="superadmin">Super Admin</option>
-								</select>
+								<Controller
+									control={control}
+									name="role"
+									render={({ field }) => (
+										<Select
+											value={field.value}
+											onValueChange={field.onChange}
+										>
+											<SelectTrigger className="w-full">
+												<SelectValue placeholder="Select role" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="salesman">Salesman</SelectItem>
+												<SelectItem value="viewer">Viewer</SelectItem>
+												<SelectItem value="editor">Editor</SelectItem>
+												<SelectItem value="superadmin">Super Admin</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								/>
 								{errors.role && (
 									<p className="text-destructive text-xs">
 										{errors.role.message}

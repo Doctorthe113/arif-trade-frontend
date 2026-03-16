@@ -14,4 +14,7 @@ export default defineConfig({
 	build: {
 		outDir: "dist",
 	},
+	server: {
+		allowedHosts: ["monster-claimed-kruger-hence.trycloudflare.com"],
+	},
 });

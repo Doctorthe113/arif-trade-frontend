@@ -25,7 +25,10 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+const API_BASE = (import.meta.env.VITE_PUBLIC_API_BASE_URL as string).replace(
+	/\/+$/,
+	"",
+);
 const STORAGE_KEY = "ati_auth";
 
 /// Decode JWT payload without library
@@ -77,18 +80,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			};
 			throw new Error(body.message ?? "Login failed");
 		}
-		const data = (await res.json()) as {
-			token: string;
-			user: { name: string; email: string; role: UserRole };
+		const json = (await res.json()) as {
+			data: {
+				token: string;
+				user: { name: string; email: string; role: UserRole };
+			};
 		};
+		const { token, user: u } = json.data;
 		const authUser: User = {
-			name: data.user.name,
-			email: data.user.email,
-			role: data.user.role,
+			name: u.name,
+			email: u.email,
+			role: u.role,
 		};
 		localStorage.setItem(
 			STORAGE_KEY,
-			JSON.stringify({ token: data.token, user: authUser }),
+			JSON.stringify({ token, user: authUser }),
 		);
 		setUser(authUser);
 	}, []);

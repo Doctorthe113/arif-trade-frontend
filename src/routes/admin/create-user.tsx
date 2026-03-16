@@ -1,11 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select";
 import { apiFetch } from "#/lib/api";
 
 const createUserSchema = z.object({
@@ -27,6 +34,7 @@ function CreateUserPage() {
 		register,
 		handleSubmit,
 		reset,
+		control,
 		formState: { errors },
 	} = useForm<CreateUserForm>({
 		resolver: zodResolver(createUserSchema),
@@ -95,16 +103,26 @@ function CreateUserPage() {
 							<label htmlFor="role" className="text-sm font-medium">
 								Role
 							</label>
-							<select
-								id="role"
-								{...register("role")}
-								className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-							>
-								<option value="salesman">Salesman</option>
-								<option value="viewer">Viewer</option>
-								<option value="editor">Editor</option>
-								<option value="superadmin">Super Admin</option>
-							</select>
+							<Controller
+								control={control}
+								name="role"
+								render={({ field }) => (
+									<Select
+										value={field.value}
+										onValueChange={field.onChange}
+									>
+										<SelectTrigger className="w-full">
+											<SelectValue placeholder="Select role" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="salesman">Salesman</SelectItem>
+											<SelectItem value="viewer">Viewer</SelectItem>
+											<SelectItem value="editor">Editor</SelectItem>
+											<SelectItem value="superadmin">Super Admin</SelectItem>
+										</SelectContent>
+									</Select>
+								)}
+							/>
 							{errors.role && (
 								<p className="text-destructive text-xs">
 									{errors.role.message}
