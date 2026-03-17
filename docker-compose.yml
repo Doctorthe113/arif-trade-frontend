@@ -1,0 +1,50 @@
+services:
+  api:
+    container_name: ati-rest-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    image: php:8.2-apache
+    working_dir: /var/www/html
+    command: >
+      bash -lc "apt-get update &&
+      apt-get install -y --no-install-recommends default-mysql-client &&
+      docker-php-ext-install pdo pdo_mysql &&
+      a2enmod rewrite headers &&
+      rm -rf /var/www/html/* &&
+      cp -a /opt/restAPI/. /var/www/html/ &&
+      sed -i \"s/define('DB_HOST'.*/define('DB_HOST',    'mysql');/\" /var/www/html/config.php &&
+      sed -i \"s/define('DB_PORT'.*/define('DB_PORT',    3306);/\" /var/www/html/config.php &&
+      sed -i \"s/define('DB_NAME'.*/define('DB_NAME',    'ati_db');/\" /var/www/html/config.php &&
+      sed -i \"s/define('DB_USER'.*/define('DB_USER',    'root');/\" /var/www/html/config.php &&
+      sed -i \"s/define('DB_PASS'.*/define('DB_PASS',    'root_pass');/\" /var/www/html/config.php &&
+      apache2-foreground"
+    ports:
+      - "8080:80"
+    volumes:
+      - ./arif_trade_international/restAPI:/opt/restAPI:ro
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: ati-mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: ati_db
+      MYSQL_USER: ati_user
+      MYSQL_PASSWORD: ati_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./arif_trade_international/ati_db.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

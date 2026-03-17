@@ -1,7 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { Badge } from "#/components/ui/badge";
+import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "#/components/ui/table";
 import { apiFetch } from "#/lib/api";
 
 type InventoryLog = {
@@ -9,7 +19,7 @@ type InventoryLog = {
 	product_name: string;
 	product_code: string;
 	unit_name: string;
-	variant_attributes: string | null;
+	variant_attributes: unknown;
 	quantity: number;
 	action: string;
 	note: string | null;
@@ -19,7 +29,12 @@ type InventoryLog = {
 
 type PaginatedInventory = {
 	data: InventoryLog[];
-	total: number;
+	pagination: {
+		page: number;
+		per_page: number;
+		total: number;
+		last_page: number;
+	};
 };
 
 export const Route = createFileRoute("/salesman/inventory")({
@@ -28,9 +43,17 @@ export const Route = createFileRoute("/salesman/inventory")({
 
 /// Inventory log table
 function InventoryPage() {
+	const [pageNumber, setPageNumber] = useState(1);
+	const [dateSortDirection, setDateSortDirection] = useState<"asc" | "desc">(
+		"desc",
+	);
+
 	const { data, isLoading } = useQuery({
-		queryKey: ["inventory-log"],
-		queryFn: () => apiFetch<PaginatedInventory>("/inventory/log?per_page=100"),
+		queryKey: ["inventory-log", pageNumber],
+		queryFn: () =>
+			apiFetch<PaginatedInventory>(
+				`/inventory/log?per_page=20&page=${pageNumber}`,
+			),
 	});
 
 	const actionVariant = (a: string) => {
@@ -38,6 +61,31 @@ function InventoryPage() {
 		if (a === "returned") return "secondary" as const;
 		return "default" as const;
 	};
+
+	const formatVariantAttributes = (value: unknown) => {
+		if (!value) return "—";
+		if (typeof value === "string") return value;
+		if (typeof value === "object") {
+			return Object.entries(value as Record<string, unknown>)
+				.map(([key, entryValue]) => `${key}: ${String(entryValue)}`)
+				.join(", ");
+		}
+		return String(value);
+	};
+
+	const inventoryRows = useMemo(() => {
+		const rows = [...(data?.data ?? [])];
+		rows.sort((leftLog, rightLog) => {
+			const leftTimeMs = new Date(leftLog.created_at).getTime();
+			const rightTimeMs = new Date(rightLog.created_at).getTime();
+			return dateSortDirection === "asc"
+				? leftTimeMs - rightTimeMs
+				: rightTimeMs - leftTimeMs;
+		});
+		return rows;
+	}, [data?.data, dateSortDirection]);
+
+	const pagination = data?.pagination;
 
 	return (
 		<div className="space-y-6">
@@ -49,47 +97,100 @@ function InventoryPage() {
 				<CardContent>
 					{isLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
+					) : !inventoryRows.length ? (
+						<p className="text-muted-foreground text-sm">
+							No inventory logs found.
+						</p>
 					) : (
-						<div className="overflow-auto">
-							<table className="w-full text-sm">
-								<thead>
-									<tr className="border-b text-left">
-										<th className="pb-2 font-medium">Product</th>
-										<th className="pb-2 font-medium">Code</th>
-										<th className="pb-2 font-medium">Unit</th>
-										<th className="pb-2 font-medium">Variant</th>
-										<th className="pb-2 font-medium">Qty</th>
-										<th className="pb-2 font-medium">Action</th>
-										<th className="pb-2 font-medium">By</th>
-										<th className="pb-2 font-medium">Date</th>
-										<th className="pb-2 font-medium">Note</th>
-									</tr>
-								</thead>
-								<tbody>
-									{(data?.data ?? []).map((log) => (
-										<tr key={log.id} className="border-b">
-											<td className="py-2">{log.product_name}</td>
-											<td className="py-2 font-mono text-xs">
+						<>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Product</TableHead>
+										<TableHead>Code</TableHead>
+										<TableHead>Unit</TableHead>
+										<TableHead>Variant</TableHead>
+										<TableHead>Qty</TableHead>
+										<TableHead>Action</TableHead>
+										<TableHead>By</TableHead>
+										<TableHead>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() =>
+													setDateSortDirection((currentSortDirection) =>
+														currentSortDirection === "asc" ? "desc" : "asc",
+													)
+												}
+											>
+												Date (
+												{dateSortDirection === "asc" ? "Oldest" : "Newest"})
+											</Button>
+										</TableHead>
+										<TableHead>Note</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{inventoryRows.map((log) => (
+										<TableRow key={log.id}>
+											<TableCell>{log.product_name}</TableCell>
+											<TableCell className="font-mono text-xs">
 												{log.product_code}
-											</td>
-											<td className="py-2">{log.unit_name}</td>
-											<td className="py-2">{log.variant_attributes ?? "—"}</td>
-											<td className="py-2">{log.quantity}</td>
-											<td className="py-2">
+											</TableCell>
+											<TableCell>{log.unit_name}</TableCell>
+											<TableCell>
+												{formatVariantAttributes(log.variant_attributes)}
+											</TableCell>
+											<TableCell>{log.quantity}</TableCell>
+											<TableCell>
 												<Badge variant={actionVariant(log.action)}>
 													{log.action}
 												</Badge>
-											</td>
-											<td className="py-2">{log.user_name}</td>
-											<td className="py-2">
+											</TableCell>
+											<TableCell>{log.user_name}</TableCell>
+											<TableCell>
 												{new Date(log.created_at).toLocaleDateString()}
-											</td>
-											<td className="py-2">{log.note ?? "—"}</td>
-										</tr>
+											</TableCell>
+											<TableCell>{log.note ?? "—"}</TableCell>
+										</TableRow>
 									))}
-								</tbody>
-							</table>
-						</div>
+								</TableBody>
+							</Table>
+							<div className="mt-4 flex items-center justify-between">
+								<p className="text-muted-foreground text-sm">
+									Page {pagination?.page ?? 1} of {pagination?.last_page ?? 1} (
+									{pagination?.total ?? 0} total)
+								</p>
+								<div className="flex items-center gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={(pagination?.page ?? 1) <= 1}
+										onClick={() =>
+											setPageNumber((currentPageNumber) =>
+												Math.max(1, currentPageNumber - 1),
+											)
+										}
+									>
+										Previous
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={
+											(pagination?.page ?? 1) >= (pagination?.last_page ?? 1)
+										}
+										onClick={() =>
+											setPageNumber(
+												(currentPageNumber) => currentPageNumber + 1,
+											)
+										}
+									>
+										Next
+									</Button>
+								</div>
+							</div>
+						</>
 					)}
 				</CardContent>
 			</Card>

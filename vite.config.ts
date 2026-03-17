@@ -15,6 +15,6 @@ export default defineConfig({
 		outDir: "dist",
 	},
 	server: {
-		allowedHosts: ["monster-claimed-kruger-hence.trycloudflare.com"],
+		allowedHosts: ["towns-ticket-detective-terrace.trycloudflare.com"],
 	},
 });

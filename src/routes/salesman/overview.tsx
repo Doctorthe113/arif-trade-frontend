@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Button } from "#/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -7,6 +9,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "#/components/ui/table";
 import { apiFetch } from "#/lib/api";
 
 type CustomerSummary = {
@@ -19,9 +29,12 @@ type CustomerSummary = {
 
 type PaginatedCustomers = {
 	data: CustomerSummary[];
-	total: number;
-	page: number;
-	per_page: number;
+	pagination: {
+		page: number;
+		per_page: number;
+		total: number;
+		last_page: number;
+	};
 };
 
 export const Route = createFileRoute("/salesman/overview")({
@@ -30,9 +43,14 @@ export const Route = createFileRoute("/salesman/overview")({
 
 /// Salesman overview / customer ledger
 function OverviewPage() {
+	const [customerPageNumber, setCustomerPageNumber] = useState(1);
+
 	const customers = useQuery({
-		queryKey: ["customers"],
-		queryFn: () => apiFetch<PaginatedCustomers>("/customers?per_page=100"),
+		queryKey: ["customers", customerPageNumber],
+		queryFn: () =>
+			apiFetch<PaginatedCustomers>(
+				`/customers?per_page=20&page=${customerPageNumber}`,
+			),
 	});
 
 	const invoices = useQuery({
@@ -48,7 +66,7 @@ function OverviewPage() {
 			}>("/invoices?per_page=100"),
 	});
 
-	const totalCustomers = customers.data?.total ?? 0;
+	const totalCustomers = customers.data?.pagination.total ?? 0;
 	const invoiceData = invoices.data?.data ?? [];
 	const totalRevenueTaka = invoiceData.reduce(
 		(sum, inv) => sum + Number.parseFloat(inv.total_amount || "0"),
@@ -61,6 +79,7 @@ function OverviewPage() {
 	const activeInvoices = invoiceData.filter(
 		(inv) => inv.status === "active",
 	).length;
+	const customerPagination = customers.data?.pagination;
 
 	return (
 		<div className="space-y-6">
@@ -105,29 +124,69 @@ function OverviewPage() {
 				<CardContent>
 					{customers.isLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
+					) : !(customers.data?.data ?? []).length ? (
+						<p className="text-muted-foreground text-sm">No customers found.</p>
 					) : (
-						<div className="overflow-auto">
-							<table className="w-full text-sm">
-								<thead>
-									<tr className="border-b text-left">
-										<th className="pb-2 font-medium">Name</th>
-										<th className="pb-2 font-medium">Type</th>
-										<th className="pb-2 font-medium">Phone</th>
-										<th className="pb-2 font-medium">Email</th>
-									</tr>
-								</thead>
-								<tbody>
-									{(customers.data?.data ?? []).map((c) => (
-										<tr key={c.id} className="border-b">
-											<td className="py-2">{c.name}</td>
-											<td className="py-2 capitalize">{c.type}</td>
-											<td className="py-2">{c.phone ?? "—"}</td>
-											<td className="py-2">{c.email ?? "—"}</td>
-										</tr>
+						<>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>Name</TableHead>
+										<TableHead>Type</TableHead>
+										<TableHead>Phone</TableHead>
+										<TableHead>Email</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{(customers.data?.data ?? []).map((customer) => (
+										<TableRow key={customer.id}>
+											<TableCell>{customer.name}</TableCell>
+											<TableCell className="capitalize">
+												{customer.type}
+											</TableCell>
+											<TableCell>{customer.phone ?? "—"}</TableCell>
+											<TableCell>{customer.email ?? "—"}</TableCell>
+										</TableRow>
 									))}
-								</tbody>
-							</table>
-						</div>
+								</TableBody>
+							</Table>
+							<div className="mt-4 flex items-center justify-between">
+								<p className="text-muted-foreground text-sm">
+									Page {customerPagination?.page ?? 1} of{" "}
+									{customerPagination?.last_page ?? 1} (
+									{customerPagination?.total ?? 0} total)
+								</p>
+								<div className="flex items-center gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={(customerPagination?.page ?? 1) <= 1}
+										onClick={() =>
+											setCustomerPageNumber((currentPageNumber) =>
+												Math.max(1, currentPageNumber - 1),
+											)
+										}
+									>
+										Previous
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={
+											(customerPagination?.page ?? 1) >=
+											(customerPagination?.last_page ?? 1)
+										}
+										onClick={() =>
+											setCustomerPageNumber(
+												(currentPageNumber) => currentPageNumber + 1,
+											)
+										}
+									>
+										Next
+									</Button>
+								</div>
+							</div>
+						</>
 					)}
 				</CardContent>
 			</Card>

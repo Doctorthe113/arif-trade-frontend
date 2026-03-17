@@ -1,13 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
-import { DataTable } from "#/components/ui/data-table";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import {
 	Select,
@@ -16,6 +21,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "#/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "#/components/ui/table";
 import { apiFetch } from "#/lib/api";
 
 type UserListItem = {
@@ -23,20 +36,17 @@ type UserListItem = {
 	name: string;
 	email: string;
 	role: string;
-	is_active: number;
-};
-
-type ApiResponse<T> = {
-	success: boolean;
-	message: string;
-	data: T;
+	is_active: boolean;
 };
 
 type PaginatedResponse<T> = {
 	data: T[];
-	total: number;
-	current_page: number;
-	per_page: number;
+	pagination: {
+		page: number;
+		per_page: number;
+		total: number;
+		last_page: number;
+	};
 };
 
 const updateUserSchema = z.object({
@@ -44,7 +54,7 @@ const updateUserSchema = z.object({
 	email: z.email("Invalid email").optional(),
 	password: z.string().min(8, "Min 8 characters").optional().or(z.literal("")),
 	role: z.enum(["superadmin", "editor", "viewer", "salesman"]).optional(),
-	is_active: z.number().min(0).max(1).optional(),
+	is_active: z.boolean().optional(),
 });
 
 type UpdateUserForm = z.infer<typeof updateUserSchema>;
@@ -57,16 +67,18 @@ export const Route = createFileRoute("/admin/update-user")({
 function UpdateUserPage() {
 	const queryClient = useQueryClient();
 	const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [pageNumber, setPageNumber] = useState(1);
 
 	const users = useQuery({
-		queryKey: ["users"],
+		queryKey: ["users", pageNumber],
 		queryFn: () =>
-			apiFetch<ApiResponse<PaginatedResponse<UserListItem>>>(
-				"/users?per_page=100",
+			apiFetch<PaginatedResponse<UserListItem>>(
+				`/users?per_page=20&page=${pageNumber}`,
 			),
 	});
 
-	const selectedUser = (users.data?.data?.data ?? []).find(
+	const selectedUser = (users.data?.data ?? []).find(
 		(u) => u.id === selectedUserId,
 	);
 
@@ -89,40 +101,9 @@ function UpdateUserPage() {
 			: undefined,
 	});
 
-	const columns: ColumnDef<UserListItem>[] = [
-		{ accessorKey: "id", header: "ID" },
-		{ accessorKey: "name", header: "Name" },
-		{ accessorKey: "email", header: "Email" },
-		{
-			accessorKey: "role",
-			header: "Role",
-			cell: ({ row }) => <span className="capitalize">{row.original.role}</span>,
-		},
-		{
-			accessorKey: "is_active",
-			header: "Active",
-			cell: ({ row }) => (row.original.is_active ? "Yes" : "No"),
-		},
-		{
-			id: "actions",
-			cell: ({ row }) => (
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => {
-						setSelectedUserId(row.original.id);
-						reset();
-						mutation.reset();
-					}}
-				>
-					Edit
-				</Button>
-			),
-		},
-	];
-
 	const mutation = useMutation({
 		mutationFn: (data: UpdateUserForm) => {
+			if (!selectedUserId) throw new Error("No user selected");
 			const body = { ...data };
 			if (!body.password) delete body.password;
 			return apiFetch(`/users/${selectedUserId}`, {
@@ -132,6 +113,8 @@ function UpdateUserPage() {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["users"] });
+			setIsDialogOpen(false);
+			setSelectedUserId(null);
 		},
 	});
 
@@ -150,18 +133,107 @@ function UpdateUserPage() {
 				<CardContent>
 					{users.isLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
+					) : users.isError ? (
+						<p className="text-destructive text-sm">
+							{users.error instanceof Error
+								? users.error.message
+								: "Failed to load users"}
+						</p>
 					) : (
-						<DataTable columns={columns} data={users.data?.data?.data ?? []} />
+						<>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead>ID</TableHead>
+										<TableHead>Name</TableHead>
+										<TableHead>Email</TableHead>
+										<TableHead>Role</TableHead>
+										<TableHead>Active</TableHead>
+										<TableHead>Action</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{(users.data?.data ?? []).map((user) => (
+										<TableRow key={user.id}>
+											<TableCell>{user.id}</TableCell>
+											<TableCell>{user.name}</TableCell>
+											<TableCell>{user.email}</TableCell>
+											<TableCell className="capitalize">{user.role}</TableCell>
+											<TableCell>{user.is_active ? "Yes" : "No"}</TableCell>
+											<TableCell>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => {
+														setSelectedUserId(user.id);
+														reset({
+															name: user.name,
+															email: user.email,
+															password: "",
+															role: user.role as UpdateUserForm["role"],
+															is_active: user.is_active,
+														});
+														mutation.reset();
+														setIsDialogOpen(true);
+													}}
+												>
+													Edit
+												</Button>
+											</TableCell>
+										</TableRow>
+									))}
+								</TableBody>
+							</Table>
+							<div className="mt-4 flex items-center justify-between">
+								<p className="text-muted-foreground text-sm">
+									Page {users.data?.pagination.page ?? 1} of{" "}
+									{users.data?.pagination.last_page ?? 1} ({" "}
+									{users.data?.pagination.total ?? 0} total)
+								</p>
+								<div className="flex items-center gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={(users.data?.pagination.page ?? 1) <= 1}
+										onClick={() =>
+											setPageNumber((currentPageNumber) =>
+												Math.max(1, currentPageNumber - 1),
+											)
+										}
+									>
+										Previous
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={
+											(users.data?.pagination.page ?? 1) >=
+											(users.data?.pagination.last_page ?? 1)
+										}
+										onClick={() =>
+											setPageNumber(
+												(currentPageNumber) => currentPageNumber + 1,
+											)
+										}
+									>
+										Next
+									</Button>
+								</div>
+							</div>
+						</>
 					)}
 				</CardContent>
 			</Card>
 
-			{selectedUser && (
-				<Card className="max-w-lg">
-					<CardHeader>
-						<CardTitle>Edit: {selectedUser.name}</CardTitle>
-					</CardHeader>
-					<CardContent>
+			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Edit User</DialogTitle>
+						<DialogDescription>
+							Update user details and save changes.
+						</DialogDescription>
+					</DialogHeader>
+					{selectedUser && (
 						<form
 							onSubmit={handleSubmit(onSubmit)}
 							className="flex flex-col gap-4"
@@ -211,10 +283,7 @@ function UpdateUserPage() {
 									control={control}
 									name="role"
 									render={({ field }) => (
-										<Select
-											value={field.value}
-											onValueChange={field.onChange}
-										>
+										<Select value={field.value} onValueChange={field.onChange}>
 											<SelectTrigger className="w-full">
 												<SelectValue placeholder="Select role" />
 											</SelectTrigger>
@@ -258,9 +327,9 @@ function UpdateUserPage() {
 								</p>
 							)}
 						</form>
-					</CardContent>
-				</Card>
-			)}
+					)}
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

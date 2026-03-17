@@ -1,9 +1,21 @@
 import { getToken } from "./auth";
 
+type ApiEnvelope<T> = {
+	success: boolean;
+	message?: string;
+	data: T;
+};
+
 const API_BASE = (import.meta.env.VITE_PUBLIC_API_BASE_URL as string).replace(
 	/\/+$/,
 	"",
 );
+
+function isApiEnvelope<T>(value: unknown): value is ApiEnvelope<T> {
+	if (!value || typeof value !== "object") return false;
+	const maybe = value as Record<string, unknown>;
+	return typeof maybe.success === "boolean" && Object.hasOwn(maybe, "data");
+}
 
 /// Authenticated fetch wrapper
 export async function apiFetch<T>(
@@ -27,5 +39,6 @@ export async function apiFetch<T>(
 		};
 		throw new Error(body.message ?? `Request failed: ${res.status}`);
 	}
-	return res.json() as Promise<T>;
+	const body = (await res.json()) as T | ApiEnvelope<T>;
+	return isApiEnvelope<T>(body) ? body.data : body;
 }
