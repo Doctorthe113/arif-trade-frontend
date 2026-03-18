@@ -4,6 +4,13 @@ import { useMemo, useState } from "react";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog";
 import { Input } from "#/components/ui/input";
 import {
 	Table,
@@ -41,7 +48,7 @@ export const Route = createFileRoute("/salesman/quote")({
 /// Quotation creation + list
 function QuotePage() {
 	const queryClient = useQueryClient();
-	const [showForm, setShowForm] = useState(false);
+	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [note, setNote] = useState("");
 	const [items, setItems] = useState<
 		{ id: number; variant_unit_id: string; quantity: string }[]
@@ -71,7 +78,7 @@ function QuotePage() {
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["quotations"] });
-			setShowForm(false);
+			setIsCreateDialogOpen(false);
 			setNote("");
 			setItems([{ id: 1, variant_unit_id: "", quantity: "1" }]);
 			setNextId(2);
@@ -137,72 +144,73 @@ function QuotePage() {
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold">Quotations</h1>
-				<Button onClick={() => setShowForm(!showForm)}>
-					{showForm ? "Cancel" : "New Quotation"}
+				<Button onClick={() => setIsCreateDialogOpen(true)}>
+					New Quotation
 				</Button>
 			</div>
 
-			{showForm && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Create Quotation</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<form onSubmit={handleSubmit} className="space-y-4">
-							{items.map((item, i) => (
-								<div key={item.id} className="flex items-center gap-2">
-									<Input
-										type="number"
-										placeholder="Variant Unit ID"
-										value={item.variant_unit_id}
-										onChange={(e) =>
-											handleItemChange(i, "variant_unit_id", e.target.value)
-										}
-										className="flex-1"
-									/>
-									<Input
-										type="number"
-										placeholder="Qty"
-										value={item.quantity}
-										onChange={(e) =>
-											handleItemChange(i, "quantity", e.target.value)
-										}
-										className="w-24"
-									/>
-									{items.length > 1 && (
-										<Button
-											type="button"
-											variant="ghost"
-											size="sm"
-											onClick={() => handleRemoveItem(i)}
-										>
-											Remove
-										</Button>
-									)}
-								</div>
-							))}
-							<Button type="button" variant="outline" onClick={handleAddItem}>
-								Add Item
-							</Button>
-							<Input
-								placeholder="Note (optional)"
-								value={note}
-								onChange={(e) => setNote(e.target.value)}
-							/>
-							<Button type="submit" disabled={createMutation.isPending}>
-								{createMutation.isPending ? "Creating..." : "Submit Quotation"}
-							</Button>
-							{createMutation.isError && (
-								<p className="text-destructive text-sm">
-									{createMutation.error instanceof Error
-										? createMutation.error.message
-										: "Failed"}
-								</p>
-							)}
-						</form>
-					</CardContent>
-				</Card>
-			)}
+			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create Quotation</DialogTitle>
+						<DialogDescription>
+							Add one or more variant-unit items to submit a quotation request.
+						</DialogDescription>
+					</DialogHeader>
+					<form onSubmit={handleSubmit} className="flex flex-col gap-4">
+						{items.map((item, i) => (
+							<div key={item.id} className="flex items-center gap-2">
+								<Input
+									type="number"
+									placeholder="Variant Unit ID"
+									value={item.variant_unit_id}
+									onChange={(e) =>
+										handleItemChange(i, "variant_unit_id", e.target.value)
+									}
+									className="flex-1"
+								/>
+								<Input
+									type="number"
+									placeholder="Qty"
+									value={item.quantity}
+									onChange={(e) =>
+										handleItemChange(i, "quantity", e.target.value)
+									}
+									className="w-24"
+								/>
+								{items.length > 1 && (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => handleRemoveItem(i)}
+									>
+										Remove
+									</Button>
+								)}
+							</div>
+						))}
+						<Button type="button" variant="outline" onClick={handleAddItem}>
+							Add Item
+						</Button>
+						<Input
+							placeholder="Note (optional)"
+							value={note}
+							onChange={(e) => setNote(e.target.value)}
+						/>
+						<Button type="submit" disabled={createMutation.isPending}>
+							{createMutation.isPending ? "Creating..." : "Submit Quotation"}
+						</Button>
+						{createMutation.isError && (
+							<p className="text-destructive text-sm">
+								{createMutation.error instanceof Error
+									? createMutation.error.message
+									: "Failed"}
+							</p>
+						)}
+					</form>
+				</DialogContent>
+			</Dialog>
 
 			<Card>
 				<CardHeader>
