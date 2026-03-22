@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Button } from "#/components/ui/button";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { useMemo } from "react";
 import {
 	Card,
 	CardContent,
@@ -18,6 +17,8 @@ import {
 	TableRow,
 } from "#/components/ui/table";
 import { apiFetch } from "#/lib/api";
+import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 type CustomerSummary = {
 	id: number;
@@ -25,6 +26,14 @@ type CustomerSummary = {
 	type: string;
 	phone: string | null;
 	email: string | null;
+};
+
+type InvoiceSummary = {
+	id: number;
+	customer_id: number;
+	total_amount: string;
+	status: string;
+	due: string;
 };
 
 type PaginatedCustomers = {
@@ -37,49 +46,118 @@ type PaginatedCustomers = {
 	};
 };
 
+type PaginatedInvoices = {
+	data: InvoiceSummary[];
+	pagination: {
+		page: number;
+		per_page: number;
+		total: number;
+		last_page: number;
+	};
+};
+
+async function fetchCustomersByType(type: string): Promise<CustomerSummary[]> {
+	const perPage = 200;
+	let pageNumber = 1;
+	let lastPageNumber = 1;
+	const rows: CustomerSummary[] = [];
+
+	do {
+		const response = await apiFetch<PaginatedCustomers>(
+			`/customers?type=${type}&per_page=${perPage}&page=${pageNumber}`,
+		);
+		rows.push(...(response.data ?? []));
+		lastPageNumber = response.pagination?.last_page ?? pageNumber;
+		pageNumber += 1;
+	} while (pageNumber <= lastPageNumber);
+
+	return rows;
+}
+
+async function fetchAllInvoices(): Promise<InvoiceSummary[]> {
+	const perPage = 200;
+	let pageNumber = 1;
+	let lastPageNumber = 1;
+	const rows: InvoiceSummary[] = [];
+
+	do {
+		const response = await apiFetch<PaginatedInvoices>(
+			`/invoices?per_page=${perPage}&page=${pageNumber}`,
+		);
+		rows.push(...(response.data ?? []));
+		lastPageNumber = response.pagination?.last_page ?? pageNumber;
+		pageNumber += 1;
+	} while (pageNumber <= lastPageNumber);
+
+	return rows;
+}
+
 export const Route = createFileRoute("/salesman/overview")({
 	component: OverviewPage,
 });
 
 /// Salesman overview / customer ledger
 function OverviewPage() {
-	const [customerPageNumber, setCustomerPageNumber] = useState(1);
+	const { hasRole } = useAuth();
+	const isAdminUser = isAuthDisabled || hasRole("superadmin", "editor");
 
 	const customers = useQuery({
-		queryKey: ["customers", customerPageNumber],
-		queryFn: () =>
-			apiFetch<PaginatedCustomers>(
-				`/customers?per_page=20&page=${customerPageNumber}`,
-			),
+		queryKey: ["overview-ledger-customers"],
+		queryFn: async () => {
+			const [doctors, hospitals] = await Promise.all([
+				fetchCustomersByType("doctor"),
+				fetchCustomersByType("hospital"),
+			]);
+			return [...doctors, ...hospitals].sort((leftCustomer, rightCustomer) =>
+				leftCustomer.name.localeCompare(rightCustomer.name),
+			);
+		},
 	});
 
 	const invoices = useQuery({
-		queryKey: ["invoices-summary"],
-		queryFn: () =>
-			apiFetch<{
-				data: {
-					id: number;
-					total_amount: string;
-					status: string;
-					due: string;
-				}[];
-			}>("/invoices?per_page=100"),
+		queryKey: ["overview-ledger-invoices"],
+		queryFn: fetchAllInvoices,
 	});
 
-	const totalCustomers = customers.data?.pagination.total ?? 0;
-	const invoiceData = invoices.data?.data ?? [];
-	const totalRevenueTaka = invoiceData.reduce(
-		(sum, inv) => sum + Number.parseFloat(inv.total_amount || "0"),
+	const customerRows = customers.data ?? [];
+	const invoiceData = invoices.data ?? [];
+
+	const customerMetricsById = useMemo(() => {
+		const map: Record<
+			number,
+			{ soldAmountTaka: number; dueAmountTaka: number }
+		> = {};
+
+		for (const invoice of invoiceData) {
+			if (!map[invoice.customer_id]) {
+				map[invoice.customer_id] = { soldAmountTaka: 0, dueAmountTaka: 0 };
+			}
+
+			const soldAmount = Number.parseFloat(invoice.total_amount || "0");
+			const dueAmount = Number.parseFloat(invoice.due || "0");
+			if (invoice.status !== "returned" && invoice.status !== "void") {
+				map[invoice.customer_id].soldAmountTaka += soldAmount;
+			}
+			map[invoice.customer_id].dueAmountTaka += dueAmount;
+		}
+
+		return map;
+	}, [invoiceData]);
+
+	const totalCustomers = customerRows.length;
+	const totalRevenueTaka = Object.values(customerMetricsById).reduce(
+		(sum, metric) => sum + metric.soldAmountTaka,
 		0,
 	);
-	const totalDueTaka = invoiceData.reduce(
-		(sum, inv) => sum + Number.parseFloat(inv.due || "0"),
+	const totalDueTaka = Object.values(customerMetricsById).reduce(
+		(sum, metric) => sum + metric.dueAmountTaka,
 		0,
 	);
 	const activeInvoices = invoiceData.filter(
 		(inv) => inv.status === "active",
 	).length;
-	const customerPagination = customers.data?.pagination;
+
+	if (!isAdminUser) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">
@@ -118,27 +196,50 @@ function OverviewPage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Customer Ledger</CardTitle>
-					<CardDescription>All registered customers</CardDescription>
+					<CardTitle>Doctor & Hospital Ledger</CardTitle>
+					<CardDescription>
+						Sold and due amount per doctor/hospital
+					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					{customers.isLoading ? (
+					{customers.isLoading || invoices.isLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
-					) : !(customers.data?.data ?? []).length ? (
-						<p className="text-muted-foreground text-sm">No customers found.</p>
+					) : customers.isError ? (
+						<p className="text-destructive text-sm">
+							{customers.error instanceof Error
+								? customers.error.message
+								: "Failed to load customers"}
+						</p>
+					) : invoices.isError ? (
+						<p className="text-destructive text-sm">
+							{invoices.error instanceof Error
+								? invoices.error.message
+								: "Failed to load invoices"}
+						</p>
+					) : !customerRows.length ? (
+						<p className="text-muted-foreground text-sm">
+							No doctor or hospital found.
+						</p>
 					) : (
-						<>
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Name</TableHead>
-										<TableHead>Type</TableHead>
-										<TableHead>Phone</TableHead>
-										<TableHead>Email</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{(customers.data?.data ?? []).map((customer) => (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Name</TableHead>
+									<TableHead>Type</TableHead>
+									<TableHead>Phone</TableHead>
+									<TableHead>Email</TableHead>
+									<TableHead>Sold</TableHead>
+									<TableHead>Due</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{customerRows.map((customer) => {
+									const metric = customerMetricsById[customer.id] ?? {
+										soldAmountTaka: 0,
+										dueAmountTaka: 0,
+									};
+
+									return (
 										<TableRow key={customer.id}>
 											<TableCell>{customer.name}</TableCell>
 											<TableCell className="capitalize">
@@ -146,47 +247,17 @@ function OverviewPage() {
 											</TableCell>
 											<TableCell>{customer.phone ?? "—"}</TableCell>
 											<TableCell>{customer.email ?? "—"}</TableCell>
+											<TableCell>
+												৳{metric.soldAmountTaka.toLocaleString()}
+											</TableCell>
+											<TableCell className="text-destructive">
+												৳{metric.dueAmountTaka.toLocaleString()}
+											</TableCell>
 										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-							<div className="mt-4 flex items-center justify-between">
-								<p className="text-muted-foreground text-sm">
-									Page {customerPagination?.page ?? 1} of{" "}
-									{customerPagination?.last_page ?? 1} (
-									{customerPagination?.total ?? 0} total)
-								</p>
-								<div className="flex items-center gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={(customerPagination?.page ?? 1) <= 1}
-										onClick={() =>
-											setCustomerPageNumber((currentPageNumber) =>
-												Math.max(1, currentPageNumber - 1),
-											)
-										}
-									>
-										Previous
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={
-											(customerPagination?.page ?? 1) >=
-											(customerPagination?.last_page ?? 1)
-										}
-										onClick={() =>
-											setCustomerPageNumber(
-												(currentPageNumber) => currentPageNumber + 1,
-											)
-										}
-									>
-										Next
-									</Button>
-								</div>
-							</div>
-						</>
+									);
+								})}
+							</TableBody>
+						</Table>
 					)}
 				</CardContent>
 			</Card>

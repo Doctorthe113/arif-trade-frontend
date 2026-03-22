@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Badge } from "#/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { apiFetch } from "#/lib/api";
+import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 type Payment = {
 	id: number;
@@ -23,6 +25,9 @@ export const Route = createFileRoute("/salesman/transaction")({
 
 /// Transaction / payment list
 function TransactionPage() {
+	const { hasRole } = useAuth();
+	const isAdminUser = isAuthDisabled || hasRole("superadmin", "editor");
+
 	const [invoiceId, setInvoiceId] = useState("");
 
 	const { data, isLoading, error } = useQuery({
@@ -37,6 +42,8 @@ function TransactionPage() {
 			}>(`/invoices/${invoiceId}/payments`),
 		enabled: invoiceId.length > 0,
 	});
+
+	if (!isAdminUser) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">

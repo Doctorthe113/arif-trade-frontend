@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -13,6 +13,8 @@ import {
 	TableRow,
 } from "#/components/ui/table";
 import { apiFetch } from "#/lib/api";
+import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 type Invoice = {
 	id: number;
@@ -40,6 +42,9 @@ export const Route = createFileRoute("/salesman/invoices")({
 
 /// Invoice list table
 function InvoicesPage() {
+	const { hasRole } = useAuth();
+	const isAdminUser = isAuthDisabled || hasRole("superadmin", "editor");
+
 	const [pageNumber, setPageNumber] = useState(1);
 	const [dateSortDirection, setDateSortDirection] = useState<"asc" | "desc">(
 		"desc",
@@ -78,6 +83,8 @@ function InvoicesPage() {
 	}, [data?.data, dateSortDirection]);
 
 	const pagination = data?.pagination;
+
+	if (!isAdminUser) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">

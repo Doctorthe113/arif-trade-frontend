@@ -20,9 +20,16 @@ export const Route = createFileRoute("/admin")({
 
 /// Admin layout with nav
 function AdminLayout() {
-	const { hasRole } = useAuth();
+	const { hasRole, user } = useAuth();
+	const roleName = user?.role as string | undefined;
 
-	if (!isAuthDisabled && !hasRole("superadmin")) return <Navigate to="/" />;
+	if (
+		!isAuthDisabled &&
+		!hasRole("superadmin", "editor") &&
+		roleName !== "admin"
+	) {
+		return <Navigate to="/" />;
+	}
 
 	const navGroups = [
 		{
@@ -62,7 +69,7 @@ function AdminLayout() {
 
 	return (
 		<AppLayout
-			roleLabel="Super Admin"
+			roleLabel={user?.role === "editor" ? "Admin" : "Super Admin"}
 			roleIcon={Shield}
 			breadcrumb="Admin Panel"
 			navGroups={navGroups}

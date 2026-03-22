@@ -16,7 +16,6 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarProvider,
-	SidebarRail,
 	SidebarTrigger,
 } from "#/components/ui/sidebar";
 
@@ -116,15 +115,14 @@ export function AppLayout({
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
-				<SidebarRail />
 			</Sidebar>
 
-			<SidebarInset>
+			<SidebarInset className="flex max-h-full min-h-0 min-w-0 max-w-full flex-col overflow-clip rounded-md">
 				<header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
 					<SidebarTrigger className="-ml-1" />
 					<span className="text-sm font-medium">{breadcrumb}</span>
 				</header>
-				<main className="flex-1 p-4 md:p-6">
+				<main className="p-4 md:p-6 flex-1">
 					<Outlet />
 				</main>
 			</SidebarInset>

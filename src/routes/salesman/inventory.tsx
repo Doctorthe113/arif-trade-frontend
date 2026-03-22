@@ -1,9 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { z } from "zod/v4";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "#/components/ui/dialog";
+import { Input } from "#/components/ui/input";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "#/components/ui/select";
 import {
 	Table,
 	TableBody,
@@ -13,6 +31,8 @@ import {
 	TableRow,
 } from "#/components/ui/table";
 import { apiFetch } from "#/lib/api";
+import { useAuth } from "#/lib/auth";
+import { isAuthDisabled } from "#/lib/auth-flags";
 
 type InventoryLog = {
 	id: number;
@@ -40,6 +60,7 @@ type PaginatedInventory = {
 
 type ProductVariantUnit = {
 	id: number;
+	unit_id?: number;
 	unit_name: string;
 	stock_quantity: number;
 	unit_price: number;
@@ -72,13 +93,59 @@ type PaginatedProducts = {
 	};
 };
 
+type Unit = {
+	id: number;
+	name: string;
+	multiplier: number;
+};
+
+const numericOptionalField = z.preprocess((value) => {
+	if (value === "" || value === undefined || value === null) return undefined;
+	return Number(value);
+}, z.number().min(0).optional());
+
+const addInventorySchema = z.object({
+	productId: z.string().min(1, "Product required"),
+	variantId: z.string().min(1, "Variant required"),
+	unitId: z.string().min(1, "Unit required"),
+	unitPrice: z.coerce.number().min(0, "Price must be 0 or more"),
+	stockQuantity: z.coerce.number().min(0, "Stock must be 0 or more"),
+});
+
+type AddInventoryForm = z.infer<typeof addInventorySchema>;
+type AddInventoryFormInput = z.input<typeof addInventorySchema>;
+
+const updateInventorySchema = z
+	.object({
+		variantUnitId: z.string().min(1, "Variant-unit required"),
+		unitPrice: numericOptionalField,
+		stockQuantity: numericOptionalField,
+	})
+	.refine(
+		(values) =>
+			typeof values.unitPrice === "number" ||
+			typeof values.stockQuantity === "number",
+		{ message: "Provide unit price or stock quantity", path: ["unitPrice"] },
+	);
+
+type UpdateInventoryForm = z.infer<typeof updateInventorySchema>;
+type UpdateInventoryFormInput = z.input<typeof updateInventorySchema>;
+
 export const Route = createFileRoute("/salesman/inventory")({
 	component: InventoryPage,
 });
 
-/// Inventory log table
+/// Inventory log + admin controls
 function InventoryPage() {
+	const { hasRole, user } = useAuth();
+	const roleName = user?.role as string | undefined;
+	const isAdminUser =
+		isAuthDisabled || hasRole("superadmin", "editor") || roleName === "admin";
+	const queryClient = useQueryClient();
+
 	const [pageNumber, setPageNumber] = useState(1);
+	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+	const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 	const [dateSortDirection, setDateSortDirection] = useState<"asc" | "desc">(
 		"desc",
 	);
@@ -86,38 +153,128 @@ function InventoryPage() {
 		"asc" | "desc"
 	>("asc");
 
-	const { data, isLoading } = useQuery({
+	const addForm = useForm<AddInventoryFormInput, unknown, AddInventoryForm>({
+		resolver: zodResolver(addInventorySchema),
+		defaultValues: {
+			productId: "",
+			variantId: "",
+			unitId: "",
+			unitPrice: 0,
+			stockQuantity: 0,
+		},
+	});
+	const selectedAddProductId = useWatch({
+		control: addForm.control,
+		name: "productId",
+	});
+
+	const updateForm = useForm<
+		UpdateInventoryFormInput,
+		unknown,
+		UpdateInventoryForm
+	>({
+		resolver: zodResolver(updateInventorySchema),
+		defaultValues: {
+			variantUnitId: "",
+			unitPrice: undefined,
+			stockQuantity: undefined,
+		},
+	});
+
+	const {
+		data,
+		isLoading,
+		isError,
+		error: inventoryError,
+	} = useQuery({
 		queryKey: ["inventory-log", pageNumber],
 		queryFn: () =>
 			apiFetch<PaginatedInventory>(
 				`/inventory/log?per_page=20&page=${pageNumber}`,
 			),
+		enabled: isAdminUser,
 	});
 
-	// Fetch all products to get category names and stock data
-	const { data: productsData } = useQuery({
+	const unitsQuery = useQuery({
+		queryKey: ["units"],
+		queryFn: () => apiFetch<Unit[]>("/units"),
+	});
+
+	const productsQuery = useQuery({
 		queryKey: ["products-all"],
 		queryFn: () => apiFetch<PaginatedProducts>("/products?per_page=200"),
 	});
 
-	// Fetch detailed product data for stock aggregation
-	const { data: allProductDetails } = useQuery({
+	const productDetailsQuery = useQuery({
 		queryKey: ["products-details"],
 		queryFn: async () => {
-			if (!productsData?.data) return [];
+			const products = productsQuery.data?.data ?? [];
 			const details = await Promise.all(
-				productsData.data.map((product) =>
+				products.map((product) =>
 					apiFetch<ProductDetail>(`/products/${product.id}`).catch(() => null),
 				),
 			);
 			return details.filter(Boolean) as ProductDetail[];
 		},
-		enabled: !!productsData?.data,
+		enabled: (productsQuery.data?.data?.length ?? 0) > 0,
 	});
 
-	const actionVariant = (a: string) => {
-		if (a === "sold") return "destructive" as const;
-		if (a === "returned") return "secondary" as const;
+	const addInventoryMutation = useMutation({
+		mutationFn: (values: AddInventoryForm) =>
+			apiFetch<{ id: number }>(`/variants/${values.variantId}/units`, {
+				method: "POST",
+				body: JSON.stringify({
+					unit_id: Number.parseInt(values.unitId, 10),
+					unit_price: values.unitPrice,
+					stock_quantity: values.stockQuantity,
+				}),
+			}),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products-details"] });
+			queryClient.invalidateQueries({ queryKey: ["products-all"] });
+			queryClient.invalidateQueries({ queryKey: ["inventory-log"] });
+			setIsAddDialogOpen(false);
+			addForm.reset({
+				productId: "",
+				variantId: "",
+				unitId: "",
+				unitPrice: 0,
+				stockQuantity: 0,
+			});
+		},
+	});
+
+	const updateInventoryMutation = useMutation({
+		mutationFn: (values: UpdateInventoryForm) => {
+			const payload: { unit_price?: number; stock_quantity?: number } = {};
+			if (typeof values.unitPrice === "number")
+				payload.unit_price = values.unitPrice;
+			if (typeof values.stockQuantity === "number") {
+				payload.stock_quantity = values.stockQuantity;
+			}
+
+			return apiFetch(`/variant-units/${values.variantUnitId}`, {
+				method: "PUT",
+				body: JSON.stringify(payload),
+			});
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["products-details"] });
+			queryClient.invalidateQueries({ queryKey: ["products-all"] });
+			queryClient.invalidateQueries({ queryKey: ["inventory-log"] });
+			setIsUpdateDialogOpen(false);
+			updateForm.reset({
+				variantUnitId: "",
+				unitPrice: undefined,
+				stockQuantity: undefined,
+			});
+		},
+	});
+
+	const actionVariant = (actionText: string) => {
+		if (actionText === "in_stock") return "outline" as const;
+		if (actionText === "sold") return "destructive" as const;
+		if (actionText === "returned") return "secondary" as const;
 		return "default" as const;
 	};
 
@@ -132,46 +289,42 @@ function InventoryPage() {
 		return String(value);
 	};
 
-	// Build product -> category lookup
 	const categoryLookup = useMemo(() => {
 		const lookup: Record<string, string | null> = {};
-		productsData?.data?.forEach((product) => {
+		productsQuery.data?.data?.forEach((product) => {
 			lookup[product.name] = product.category_name;
 		});
 		return lookup;
-	}, [productsData?.data]);
+	}, [productsQuery.data?.data]);
 
-	// Calculate summary statistics
 	const summary = useMemo(() => {
-		if (!allProductDetails)
+		if (!productDetailsQuery.data) {
 			return { totalItems: 0, totalCategories: 0, byCategory: {} };
+		}
 
 		let totalStock = 0;
 		const categoryMap: Record<string, number> = {};
 		const categorySet = new Set<string>();
 
-		allProductDetails.forEach((product) => {
-			if (product.category_name) {
-				categorySet.add(product.category_name);
-			}
+		for (const product of productDetailsQuery.data) {
+			if (product.category_name) categorySet.add(product.category_name);
 
-			product.variants?.forEach((variant) => {
-				variant.units?.forEach((unit) => {
+			for (const variant of product.variants ?? []) {
+				for (const unit of variant.units ?? []) {
 					totalStock += unit.stock_quantity;
-
-					const category = product.category_name || "Uncategorized";
-					categoryMap[category] =
-						(categoryMap[category] || 0) + unit.stock_quantity;
-				});
-			});
-		});
+					const categoryName = product.category_name ?? "Uncategorized";
+					categoryMap[categoryName] =
+						(categoryMap[categoryName] ?? 0) + unit.stock_quantity;
+				}
+			}
+		}
 
 		return {
 			totalItems: totalStock,
 			totalCategories: categorySet.size,
 			byCategory: categoryMap,
 		};
-	}, [allProductDetails]);
+	}, [productDetailsQuery.data]);
 
 	const inventoryRows = useMemo(() => {
 		const rows = [...(data?.data ?? [])];
@@ -179,21 +332,383 @@ function InventoryPage() {
 			const leftCategory = categoryLookup[leftLog.product_name] ?? "";
 			const rightCategory = categoryLookup[rightLog.product_name] ?? "";
 
+			const categoryComparison =
+				categorySortDirection === "asc"
+					? leftCategory.localeCompare(rightCategory)
+					: rightCategory.localeCompare(leftCategory);
+
+			if (categoryComparison !== 0) return categoryComparison;
+
+			const leftTimeMs = new Date(leftLog.created_at).getTime();
+			const rightTimeMs = new Date(rightLog.created_at).getTime();
+			return dateSortDirection === "asc"
+				? leftTimeMs - rightTimeMs
+				: rightTimeMs - leftTimeMs;
+		});
+		return rows;
+	}, [data?.data, categorySortDirection, categoryLookup, dateSortDirection]);
+
+	const stockRows = useMemo<InventoryLog[]>(() => {
+		const rows: InventoryLog[] = [];
+
+		for (const product of productDetailsQuery.data ?? []) {
+			for (const variant of product.variants ?? []) {
+				for (const unit of variant.units ?? []) {
+					rows.push({
+						id: unit.id,
+						product_name: product.name,
+						product_code: product.product_code,
+						unit_name: unit.unit_name,
+						variant_attributes: variant.attributes,
+						quantity: unit.stock_quantity,
+						action: "in_stock",
+						note: null,
+						user_name: "—",
+						created_at: "1970-01-01",
+						category_name: product.category_name ?? undefined,
+					});
+				}
+			}
+		}
+
+		rows.sort((leftRow, rightRow) => {
+			const leftCategory = categoryLookup[leftRow.product_name] ?? "";
+			const rightCategory = categoryLookup[rightRow.product_name] ?? "";
 			if (categorySortDirection === "asc") {
 				return leftCategory.localeCompare(rightCategory);
 			}
 			return rightCategory.localeCompare(leftCategory);
 		});
+
 		return rows;
-	}, [data?.data, categorySortDirection, categoryLookup]);
+	}, [productDetailsQuery.data, categoryLookup, categorySortDirection]);
+
+	const productOptions = useMemo(() => {
+		return (productsQuery.data?.data ?? []).map((product) => ({
+			value: String(product.id),
+			label: `${product.name} (${product.product_code})`,
+		}));
+	}, [productsQuery.data?.data]);
+
+	const variantOptionsByProductId = useMemo(() => {
+		const map: Record<string, { value: string; label: string }[]> = {};
+
+		for (const product of productDetailsQuery.data ?? []) {
+			map[String(product.id)] = (product.variants ?? []).map((variant) => {
+				const attributeText = Object.entries(variant.attributes ?? {})
+					.map(([key, value]) => `${key}: ${String(value)}`)
+					.join(", ");
+				return {
+					value: String(variant.id),
+					label: attributeText || variant.sku || `Variant #${variant.id}`,
+				};
+			});
+		}
+
+		return map;
+	}, [productDetailsQuery.data]);
+
+	const variantUnitOptions = useMemo(() => {
+		const options: { value: string; label: string }[] = [];
+
+		for (const product of productDetailsQuery.data ?? []) {
+			for (const variant of product.variants ?? []) {
+				const attributeText = Object.entries(variant.attributes ?? {})
+					.map(([key, value]) => `${key}: ${String(value)}`)
+					.join(", ");
+				for (const unit of variant.units ?? []) {
+					options.push({
+						value: String(unit.id),
+						label: `${product.name} | ${attributeText || variant.sku || "Variant"} | ${unit.unit_name}`,
+					});
+				}
+			}
+		}
+
+		return options;
+	}, [productDetailsQuery.data]);
 
 	const pagination = data?.pagination;
+	const displayedRows = isAdminUser ? inventoryRows : stockRows;
+	const selectedVariantOptions =
+		variantOptionsByProductId[selectedAddProductId ?? ""] ?? [];
+
+	function handleAddSubmit(values: AddInventoryForm) {
+		addInventoryMutation.mutate(values);
+	}
+
+	function handleUpdateSubmit(values: UpdateInventoryForm) {
+		updateInventoryMutation.mutate(values);
+	}
 
 	return (
 		<div className="space-y-6">
-			<h1 className="text-2xl font-bold">Inventory</h1>
+			<div className="flex items-center justify-between gap-3">
+				<h1 className="text-2xl font-bold">Inventory</h1>
+				{isAdminUser && (
+					<div className="flex items-center gap-2">
+						<Button
+							variant="outline"
+							onClick={() => setIsUpdateDialogOpen(true)}
+						>
+							Update Inventory
+						</Button>
+						<Button onClick={() => setIsAddDialogOpen(true)}>
+							Add Inventory Item
+						</Button>
+					</div>
+				)}
+			</div>
 
-			{/* Summary Cards */}
+			<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+				<DialogContent className="max-h-[85vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Add Inventory Item</DialogTitle>
+						<DialogDescription>
+							Link a unit to a variant and set stock and price.
+						</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={addForm.handleSubmit(handleAddSubmit)}
+						className="flex flex-col gap-4"
+					>
+						<div className="flex flex-col gap-2">
+							<label
+								htmlFor="inventory-add-product"
+								className="text-sm font-medium"
+							>
+								Product
+							</label>
+							<Controller
+								control={addForm.control}
+								name="productId"
+								render={({ field }) => (
+									<Select
+										value={field.value}
+										onValueChange={(value) => {
+											field.onChange(value);
+											addForm.setValue("variantId", "");
+										}}
+									>
+										<SelectTrigger
+											id="inventory-add-product"
+											className="w-full"
+										>
+											<SelectValue placeholder="Select product" />
+										</SelectTrigger>
+										<SelectContent>
+											{productOptions.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-2">
+							<label
+								htmlFor="inventory-add-variant"
+								className="text-sm font-medium"
+							>
+								Variant
+							</label>
+							<Controller
+								control={addForm.control}
+								name="variantId"
+								render={({ field }) => (
+									<Select value={field.value} onValueChange={field.onChange}>
+										<SelectTrigger
+											id="inventory-add-variant"
+											className="w-full"
+										>
+											<SelectValue placeholder="Select variant" />
+										</SelectTrigger>
+										<SelectContent>
+											{selectedVariantOptions.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-2">
+							<label
+								htmlFor="inventory-add-unit"
+								className="text-sm font-medium"
+							>
+								Unit
+							</label>
+							<Controller
+								control={addForm.control}
+								name="unitId"
+								render={({ field }) => (
+									<Select value={field.value} onValueChange={field.onChange}>
+										<SelectTrigger id="inventory-add-unit" className="w-full">
+											<SelectValue placeholder="Select unit" />
+										</SelectTrigger>
+										<SelectContent>
+											{(unitsQuery.data ?? []).map((unit) => (
+												<SelectItem key={unit.id} value={String(unit.id)}>
+													{unit.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
+						</div>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="inventory-add-price"
+									className="text-sm font-medium"
+								>
+									Unit Price
+								</label>
+								<Input
+									id="inventory-add-price"
+									type="number"
+									step="0.01"
+									min={0}
+									{...addForm.register("unitPrice")}
+								/>
+							</div>
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="inventory-add-stock"
+									className="text-sm font-medium"
+								>
+									Stock Quantity
+								</label>
+								<Input
+									id="inventory-add-stock"
+									type="number"
+									min={0}
+									{...addForm.register("stockQuantity")}
+								/>
+							</div>
+						</div>
+
+						<Button type="submit" disabled={addInventoryMutation.isPending}>
+							{addInventoryMutation.isPending
+								? "Saving..."
+								: "Create Inventory Item"}
+						</Button>
+						{addInventoryMutation.isError && (
+							<p className="text-destructive text-sm">
+								{addInventoryMutation.error instanceof Error
+									? addInventoryMutation.error.message
+									: "Failed to create inventory item"}
+							</p>
+						)}
+					</form>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+				<DialogContent className="max-h-[85vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle>Update Inventory Item</DialogTitle>
+						<DialogDescription>
+							Select existing variant-unit and update stock or price.
+						</DialogDescription>
+					</DialogHeader>
+					<form
+						onSubmit={updateForm.handleSubmit(handleUpdateSubmit)}
+						className="flex flex-col gap-4"
+					>
+						<div className="flex flex-col gap-2">
+							<label
+								htmlFor="inventory-update-variant-unit"
+								className="text-sm font-medium"
+							>
+								Variant Unit
+							</label>
+							<Controller
+								control={updateForm.control}
+								name="variantUnitId"
+								render={({ field }) => (
+									<Select value={field.value} onValueChange={field.onChange}>
+										<SelectTrigger
+											id="inventory-update-variant-unit"
+											className="w-full"
+										>
+											<SelectValue placeholder="Select variant-unit" />
+										</SelectTrigger>
+										<SelectContent>
+											{variantUnitOptions.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								)}
+							/>
+						</div>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="inventory-update-price"
+									className="text-sm font-medium"
+								>
+									Unit Price (optional)
+								</label>
+								<Input
+									id="inventory-update-price"
+									type="number"
+									step="0.01"
+									min={0}
+									{...updateForm.register("unitPrice")}
+								/>
+							</div>
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="inventory-update-stock"
+									className="text-sm font-medium"
+								>
+									Stock Quantity (optional)
+								</label>
+								<Input
+									id="inventory-update-stock"
+									type="number"
+									min={0}
+									{...updateForm.register("stockQuantity")}
+								/>
+							</div>
+						</div>
+
+						{updateForm.formState.errors.unitPrice && (
+							<p className="text-destructive text-sm">
+								{updateForm.formState.errors.unitPrice.message}
+							</p>
+						)}
+
+						<Button type="submit" disabled={updateInventoryMutation.isPending}>
+							{updateInventoryMutation.isPending
+								? "Updating..."
+								: "Update Inventory Item"}
+						</Button>
+						{updateInventoryMutation.isError && (
+							<p className="text-destructive text-sm">
+								{updateInventoryMutation.error instanceof Error
+									? updateInventoryMutation.error.message
+									: "Failed to update inventory item"}
+							</p>
+						)}
+					</form>
+				</DialogContent>
+			</Dialog>
+
 			<div className="grid grid-cols-3 gap-4">
 				<Card>
 					<CardHeader>
@@ -203,7 +718,7 @@ function InventoryPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold">{summary.totalItems}</div>
-						<p className="text-xs text-muted-foreground mt-1">
+						<p className="mt-1 text-xs text-muted-foreground">
 							Across all variants
 						</p>
 					</CardContent>
@@ -217,7 +732,7 @@ function InventoryPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-3xl font-bold">{summary.totalCategories}</div>
-						<p className="text-xs text-muted-foreground mt-1">
+						<p className="mt-1 text-xs text-muted-foreground">
 							Product categories
 						</p>
 					</CardContent>
@@ -232,7 +747,7 @@ function InventoryPage() {
 					<CardContent>
 						<div className="space-y-1">
 							{Object.entries(summary.byCategory)
-								.sort(([, a], [, b]) => b - a)
+								.sort(([, leftCount], [, rightCount]) => rightCount - leftCount)
 								.slice(0, 3)
 								.map(([category, count]) => (
 									<p key={category} className="text-sm">
@@ -247,14 +762,22 @@ function InventoryPage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Inventory Log</CardTitle>
+					<CardTitle>
+						{isAdminUser ? "Inventory Log" : "Current Stock"}
+					</CardTitle>
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
-					) : !inventoryRows.length ? (
+					) : isError ? (
+						<p className="text-destructive text-sm">
+							{inventoryError instanceof Error
+								? inventoryError.message
+								: "Failed to load inventory"}
+						</p>
+					) : !displayedRows.length ? (
 						<p className="text-muted-foreground text-sm">
-							No inventory logs found.
+							No inventory items found.
 						</p>
 					) : (
 						<>
@@ -268,8 +791,8 @@ function InventoryPage() {
 												variant="ghost"
 												size="sm"
 												onClick={() =>
-													setCategorySortDirection((curr) =>
-														curr === "asc" ? "desc" : "asc",
+													setCategorySortDirection((currentDirection) =>
+														currentDirection === "asc" ? "desc" : "asc",
 													)
 												}
 											>
@@ -280,15 +803,15 @@ function InventoryPage() {
 										<TableHead>Unit</TableHead>
 										<TableHead>Variant</TableHead>
 										<TableHead>Qty</TableHead>
-										<TableHead>Action</TableHead>
-										<TableHead>By</TableHead>
+										<TableHead>{isAdminUser ? "Action" : "Status"}</TableHead>
+										<TableHead>{isAdminUser ? "By" : "Source"}</TableHead>
 										<TableHead>
 											<Button
 												variant="ghost"
 												size="sm"
 												onClick={() =>
-													setDateSortDirection((currentSortDirection) =>
-														currentSortDirection === "asc" ? "desc" : "asc",
+													setDateSortDirection((currentDirection) =>
+														currentDirection === "asc" ? "desc" : "asc",
 													)
 												}
 											>
@@ -296,11 +819,11 @@ function InventoryPage() {
 												{dateSortDirection === "asc" ? "Oldest" : "Newest"})
 											</Button>
 										</TableHead>
-										<TableHead>Note</TableHead>
+										<TableHead>{isAdminUser ? "Note" : "Details"}</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{inventoryRows.map((log) => (
+									{displayedRows.map((log) => (
 										<TableRow key={log.id}>
 											<TableCell>{log.product_name}</TableCell>
 											<TableCell className="font-mono text-xs">
@@ -316,14 +839,18 @@ function InventoryPage() {
 											<TableCell>{log.quantity}</TableCell>
 											<TableCell>
 												<Badge variant={actionVariant(log.action)}>
-													{log.action}
+													{log.action === "in_stock" ? "available" : log.action}
 												</Badge>
 											</TableCell>
 											<TableCell>{log.user_name}</TableCell>
 											<TableCell>
-												{new Date(log.created_at).toLocaleDateString()}
+												{isAdminUser
+													? new Date(log.created_at).toLocaleDateString()
+													: "—"}
 											</TableCell>
-											<TableCell>{log.note ?? "—"}</TableCell>
+											<TableCell>
+												{isAdminUser ? (log.note ?? "—") : "Stock from catalog"}
+											</TableCell>
 										</TableRow>
 									))}
 								</TableBody>
