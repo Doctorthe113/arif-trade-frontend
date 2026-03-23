@@ -48,7 +48,7 @@ export function AppLayout({
 
 	return (
 		<SidebarProvider>
-			<Sidebar collapsible="icon" variant="inset">
+			<Sidebar collapsible="offcanvas" variant="inset">
 				<SidebarHeader>
 					<SidebarMenu>
 						<SidebarMenuItem>

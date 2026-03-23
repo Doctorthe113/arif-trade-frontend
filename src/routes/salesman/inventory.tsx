@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
@@ -33,6 +33,7 @@ import {
 import { apiFetch } from "#/lib/api";
 import { useAuth } from "#/lib/auth";
 import { isAuthDisabled } from "#/lib/auth-flags";
+import { compareDateValues } from "#/lib/sort";
 
 type InventoryLog = {
 	id: number;
@@ -99,14 +100,24 @@ type Unit = {
 	multiplier: number;
 };
 
+type Category = {
+	id: number;
+	name: string;
+};
+
+type InventoryDialogType = "none" | "add" | "update";
+
 const numericOptionalField = z.preprocess((value) => {
 	if (value === "" || value === undefined || value === null) return undefined;
 	return Number(value);
 }, z.number().min(0).optional());
 
 const addInventorySchema = z.object({
-	productId: z.string().min(1, "Product required"),
-	variantId: z.string().min(1, "Variant required"),
+	productName: z.string().min(1, "Product name required"),
+	categoryId: z.string().optional(),
+	description: z.string().optional(),
+	variantLabel: z.string().min(1, "Variant label required"),
+	sku: z.string().optional(),
 	unitId: z.string().min(1, "Unit required"),
 	unitPrice: z.coerce.number().min(0, "Price must be 0 or more"),
 	stockQuantity: z.coerce.number().min(0, "Stock must be 0 or more"),
@@ -144,8 +155,8 @@ function InventoryPage() {
 	const queryClient = useQueryClient();
 
 	const [pageNumber, setPageNumber] = useState(1);
-	const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-	const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+	const [inventoryDialogType, setInventoryDialogType] =
+		useState<InventoryDialogType>("none");
 	const [dateSortDirection, setDateSortDirection] = useState<"asc" | "desc">(
 		"desc",
 	);
@@ -156,16 +167,15 @@ function InventoryPage() {
 	const addForm = useForm<AddInventoryFormInput, unknown, AddInventoryForm>({
 		resolver: zodResolver(addInventorySchema),
 		defaultValues: {
-			productId: "",
-			variantId: "",
+			productName: "",
+			categoryId: "",
+			description: "",
+			variantLabel: "",
+			sku: "",
 			unitId: "",
 			unitPrice: 0,
 			stockQuantity: 0,
 		},
-	});
-	const selectedAddProductId = useWatch({
-		control: addForm.control,
-		name: "productId",
 	});
 
 	const updateForm = useForm<
@@ -200,6 +210,11 @@ function InventoryPage() {
 		queryFn: () => apiFetch<Unit[]>("/units"),
 	});
 
+	const categoriesQuery = useQuery({
+		queryKey: ["categories"],
+		queryFn: () => apiFetch<Category[]>("/categories"),
+	});
+
 	const productsQuery = useQuery({
 		queryKey: ["products-all"],
 		queryFn: () => apiFetch<PaginatedProducts>("/products?per_page=200"),
@@ -220,23 +235,51 @@ function InventoryPage() {
 	});
 
 	const addInventoryMutation = useMutation({
-		mutationFn: (values: AddInventoryForm) =>
-			apiFetch<{ id: number }>(`/variants/${values.variantId}/units`, {
+		mutationFn: async (values: AddInventoryForm) => {
+			const createdProduct = await apiFetch<{ id: number }>("/products", {
+				method: "POST",
+				body: JSON.stringify({
+					name: values.productName,
+					...(values.categoryId
+						? { category_id: Number.parseInt(values.categoryId, 10) }
+						: {}),
+					...(values.description ? { description: values.description } : {}),
+				}),
+			});
+
+			const createdVariant = await apiFetch<{ id: number }>(
+				`/products/${createdProduct.id}/variants`,
+				{
+					method: "POST",
+					body: JSON.stringify({
+						attributes: {
+							label: values.variantLabel,
+						},
+						...(values.sku ? { sku: values.sku } : {}),
+					}),
+				},
+			);
+
+			return apiFetch<{ id: number }>(`/variants/${createdVariant.id}/units`, {
 				method: "POST",
 				body: JSON.stringify({
 					unit_id: Number.parseInt(values.unitId, 10),
 					unit_price: values.unitPrice,
 					stock_quantity: values.stockQuantity,
 				}),
-			}),
+			});
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["products-details"] });
 			queryClient.invalidateQueries({ queryKey: ["products-all"] });
 			queryClient.invalidateQueries({ queryKey: ["inventory-log"] });
-			setIsAddDialogOpen(false);
+			setInventoryDialogType("none");
 			addForm.reset({
-				productId: "",
-				variantId: "",
+				productName: "",
+				categoryId: "",
+				description: "",
+				variantLabel: "",
+				sku: "",
 				unitId: "",
 				unitPrice: 0,
 				stockQuantity: 0,
@@ -262,7 +305,7 @@ function InventoryPage() {
 			queryClient.invalidateQueries({ queryKey: ["products-details"] });
 			queryClient.invalidateQueries({ queryKey: ["products-all"] });
 			queryClient.invalidateQueries({ queryKey: ["inventory-log"] });
-			setIsUpdateDialogOpen(false);
+			setInventoryDialogType("none");
 			updateForm.reset({
 				variantUnitId: "",
 				unitPrice: undefined,
@@ -339,11 +382,11 @@ function InventoryPage() {
 
 			if (categoryComparison !== 0) return categoryComparison;
 
-			const leftTimeMs = new Date(leftLog.created_at).getTime();
-			const rightTimeMs = new Date(rightLog.created_at).getTime();
-			return dateSortDirection === "asc"
-				? leftTimeMs - rightTimeMs
-				: rightTimeMs - leftTimeMs;
+			return compareDateValues(
+				leftLog.created_at,
+				rightLog.created_at,
+				dateSortDirection,
+			);
 		});
 		return rows;
 	}, [data?.data, categorySortDirection, categoryLookup, dateSortDirection]);
@@ -383,31 +426,6 @@ function InventoryPage() {
 		return rows;
 	}, [productDetailsQuery.data, categoryLookup, categorySortDirection]);
 
-	const productOptions = useMemo(() => {
-		return (productsQuery.data?.data ?? []).map((product) => ({
-			value: String(product.id),
-			label: `${product.name} (${product.product_code})`,
-		}));
-	}, [productsQuery.data?.data]);
-
-	const variantOptionsByProductId = useMemo(() => {
-		const map: Record<string, { value: string; label: string }[]> = {};
-
-		for (const product of productDetailsQuery.data ?? []) {
-			map[String(product.id)] = (product.variants ?? []).map((variant) => {
-				const attributeText = Object.entries(variant.attributes ?? {})
-					.map(([key, value]) => `${key}: ${String(value)}`)
-					.join(", ");
-				return {
-					value: String(variant.id),
-					label: attributeText || variant.sku || `Variant #${variant.id}`,
-				};
-			});
-		}
-
-		return map;
-	}, [productDetailsQuery.data]);
-
 	const variantUnitOptions = useMemo(() => {
 		const options: { value: string; label: string }[] = [];
 
@@ -430,8 +448,8 @@ function InventoryPage() {
 
 	const pagination = data?.pagination;
 	const displayedRows = isAdminUser ? inventoryRows : stockRows;
-	const selectedVariantOptions =
-		variantOptionsByProductId[selectedAddProductId ?? ""] ?? [];
+	const isAddDialogOpen = inventoryDialogType === "add";
+	const isUpdateDialogOpen = inventoryDialogType === "update";
 
 	function handleAddSubmit(values: AddInventoryForm) {
 		addInventoryMutation.mutate(values);
@@ -449,23 +467,28 @@ function InventoryPage() {
 					<div className="flex items-center gap-2">
 						<Button
 							variant="outline"
-							onClick={() => setIsUpdateDialogOpen(true)}
+							onClick={() => setInventoryDialogType("update")}
 						>
 							Update Inventory
 						</Button>
-						<Button onClick={() => setIsAddDialogOpen(true)}>
+						<Button onClick={() => setInventoryDialogType("add")}>
 							Add Inventory Item
 						</Button>
 					</div>
 				)}
 			</div>
 
-			<Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+			<Dialog
+				open={isAddDialogOpen}
+				onOpenChange={(isOpen) =>
+					setInventoryDialogType(isOpen ? "add" : "none")
+				}
+			>
 				<DialogContent className="max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Add Inventory Item</DialogTitle>
 						<DialogDescription>
-							Link a unit to a variant and set stock and price.
+							Create a new product, its first variant, and initial stock.
 						</DialogDescription>
 					</DialogHeader>
 					<form
@@ -477,29 +500,46 @@ function InventoryPage() {
 								htmlFor="inventory-add-product"
 								className="text-sm font-medium"
 							>
-								Product
+								Product Name
+							</label>
+							<Input
+								id="inventory-add-product"
+								placeholder="Enter product name"
+								{...addForm.register("productName")}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-2">
+							<label
+								htmlFor="inventory-add-category"
+								className="text-sm font-medium"
+							>
+								Category (optional)
 							</label>
 							<Controller
 								control={addForm.control}
-								name="productId"
+								name="categoryId"
 								render={({ field }) => (
 									<Select
-										value={field.value}
-										onValueChange={(value) => {
-											field.onChange(value);
-											addForm.setValue("variantId", "");
-										}}
+										value={field.value || "__none__"}
+										onValueChange={(value) =>
+											field.onChange(value === "__none__" ? "" : value)
+										}
 									>
 										<SelectTrigger
-											id="inventory-add-product"
+											id="inventory-add-category"
 											className="w-full"
 										>
-											<SelectValue placeholder="Select product" />
+											<SelectValue placeholder="Select category" />
 										</SelectTrigger>
 										<SelectContent>
-											{productOptions.map((option) => (
-												<SelectItem key={option.value} value={option.value}>
-													{option.label}
+											<SelectItem value="__none__">No category</SelectItem>
+											{(categoriesQuery.data ?? []).map((category) => (
+												<SelectItem
+													key={category.id}
+													value={String(category.id)}
+												>
+													{category.name}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -510,32 +550,45 @@ function InventoryPage() {
 
 						<div className="flex flex-col gap-2">
 							<label
-								htmlFor="inventory-add-variant"
+								htmlFor="inventory-add-description"
 								className="text-sm font-medium"
 							>
-								Variant
+								Description (optional)
 							</label>
-							<Controller
-								control={addForm.control}
-								name="variantId"
-								render={({ field }) => (
-									<Select value={field.value} onValueChange={field.onChange}>
-										<SelectTrigger
-											id="inventory-add-variant"
-											className="w-full"
-										>
-											<SelectValue placeholder="Select variant" />
-										</SelectTrigger>
-										<SelectContent>
-											{selectedVariantOptions.map((option) => (
-												<SelectItem key={option.value} value={option.value}>
-													{option.label}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								)}
+							<Input
+								id="inventory-add-description"
+								placeholder="Enter description"
+								{...addForm.register("description")}
 							/>
+						</div>
+
+						<div className="grid grid-cols-2 gap-3">
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="inventory-add-variant"
+									className="text-sm font-medium"
+								>
+									Variant Label
+								</label>
+								<Input
+									id="inventory-add-variant"
+									placeholder="e.g. 500mg"
+									{...addForm.register("variantLabel")}
+								/>
+							</div>
+							<div className="flex flex-col gap-2">
+								<label
+									htmlFor="inventory-add-sku"
+									className="text-sm font-medium"
+								>
+									SKU (optional)
+								</label>
+								<Input
+									id="inventory-add-sku"
+									placeholder="Enter SKU"
+									{...addForm.register("sku")}
+								/>
+							</div>
 						</div>
 
 						<div className="flex flex-col gap-2">
@@ -613,7 +666,12 @@ function InventoryPage() {
 				</DialogContent>
 			</Dialog>
 
-			<Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+			<Dialog
+				open={isUpdateDialogOpen}
+				onOpenChange={(isOpen) =>
+					setInventoryDialogType(isOpen ? "update" : "none")
+				}
+			>
 				<DialogContent className="max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Update Inventory Item</DialogTitle>

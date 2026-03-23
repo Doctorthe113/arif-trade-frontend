@@ -45,7 +45,7 @@ function LoginPage() {
 		} catch (error) {
 			setErrorMessage(
 				error instanceof Error ? error.message : "Unable to sign in",
-			)
+			);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -102,5 +102,5 @@ function LoginPage() {
 				</CardContent>
 			</Card>
 		</div>
-	)
+	);
 }

@@ -15,13 +15,14 @@ import {
 import { apiFetch } from "#/lib/api";
 import { useAuth } from "#/lib/auth";
 import { isAuthDisabled } from "#/lib/auth-flags";
+import { sortRowsByDateValue } from "#/lib/sort";
 
 type Invoice = {
 	id: number;
-	customer_name: unknown;
+	customer_name: string | null;
 	date: string;
 	total_amount: string;
-	status: unknown;
+	status: string;
 	paid: string;
 	due: string;
 };
@@ -62,24 +63,12 @@ function InvoicesPage() {
 		return "secondary" as const;
 	};
 
-	const safeText = (value: unknown) => {
-		if (typeof value === "string" || typeof value === "number") {
-			return String(value);
-		}
-		if (!value) return "-";
-		return JSON.stringify(value);
-	};
-
 	const invoices = useMemo(() => {
-		const rows = [...(data?.data ?? [])];
-		rows.sort((leftInvoice, rightInvoice) => {
-			const leftTimeMs = new Date(leftInvoice.date).getTime();
-			const rightTimeMs = new Date(rightInvoice.date).getTime();
-			return dateSortDirection === "asc"
-				? leftTimeMs - rightTimeMs
-				: rightTimeMs - leftTimeMs;
-		});
-		return rows;
+		return sortRowsByDateValue(
+			data?.data ?? [],
+			(invoice) => invoice.date,
+			dateSortDirection,
+		);
 	}, [data?.data, dateSortDirection]);
 
 	const pagination = data?.pagination;
@@ -127,11 +116,11 @@ function InvoicesPage() {
 								</TableHeader>
 								<TableBody>
 									{invoices.map((inv) => {
-										const statusText = safeText(inv.status);
+										const statusText = inv.status || "unknown";
 										return (
 											<TableRow key={inv.id}>
 												<TableCell>{inv.id}</TableCell>
-												<TableCell>{safeText(inv.customer_name)}</TableCell>
+												<TableCell>{inv.customer_name || "-"}</TableCell>
 												<TableCell>{inv.date}</TableCell>
 												<TableCell>
 													৳

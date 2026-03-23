@@ -33,6 +33,7 @@ import {
 import { apiFetch } from "#/lib/api";
 import { useAuth } from "#/lib/auth";
 import { isAuthDisabled } from "#/lib/auth-flags";
+import { sortRowsByDateValue } from "#/lib/sort";
 
 type Quotation = {
 	id: number;
@@ -131,6 +132,8 @@ type SelectOption = {
 	label: string;
 };
 
+type QuoteDialogType = "none" | "create" | "accept";
+
 const createQuotationSchema = z.object({
 	customerId: z.string().optional(),
 	note: z.string().max(300).optional(),
@@ -166,8 +169,8 @@ function QuotePage() {
 		isAuthDisabled || hasRole("superadmin", "editor") || roleName === "admin";
 
 	const queryClient = useQueryClient();
-	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-	const [isAcceptDialogOpen, setIsAcceptDialogOpen] = useState(false);
+	const [quoteDialogType, setQuoteDialogType] =
+		useState<QuoteDialogType>("none");
 	const [selectedQuotationId, setSelectedQuotationId] = useState<number | null>(
 		null,
 	);
@@ -295,7 +298,7 @@ function QuotePage() {
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["quotations"] });
-			setIsCreateDialogOpen(false);
+			setQuoteDialogType("none");
 			createForm.reset({
 				customerId: "",
 				note: "",
@@ -319,7 +322,7 @@ function QuotePage() {
 			}),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["quotations"] });
-			setIsAcceptDialogOpen(false);
+			setQuoteDialogType("none");
 			setSelectedQuotationId(null);
 			acceptForm.reset({ customerId: "" });
 		},
@@ -345,7 +348,7 @@ function QuotePage() {
 		acceptForm.reset({
 			customerId: quotation.customer_id ? String(quotation.customer_id) : "",
 		});
-		setIsAcceptDialogOpen(true);
+		setQuoteDialogType("accept");
 	}
 
 	function handleAcceptSubmit(values: AcceptQuotationForm) {
@@ -373,29 +376,32 @@ function QuotePage() {
 	};
 
 	const quotations = useMemo(() => {
-		const rows = [...(data?.data ?? [])];
-		rows.sort((leftQuotation, rightQuotation) => {
-			const leftTimeMs = new Date(leftQuotation.requested_at).getTime();
-			const rightTimeMs = new Date(rightQuotation.requested_at).getTime();
-			return dateSortDirection === "asc"
-				? leftTimeMs - rightTimeMs
-				: rightTimeMs - leftTimeMs;
-		});
-		return rows;
+		return sortRowsByDateValue(
+			data?.data ?? [],
+			(quotation) => quotation.requested_at,
+			dateSortDirection,
+		);
 	}, [data?.data, dateSortDirection]);
 
 	const pagination = data?.pagination;
+	const isCreateDialogOpen = quoteDialogType === "create";
+	const isAcceptDialogOpen = quoteDialogType === "accept";
 
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold">Quotations</h1>
-				<Button onClick={() => setIsCreateDialogOpen(true)}>
+				<Button onClick={() => setQuoteDialogType("create")}>
 					New Quotation
 				</Button>
 			</div>
 
-			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+			<Dialog
+				open={isCreateDialogOpen}
+				onOpenChange={(isOpen) =>
+					setQuoteDialogType(isOpen ? "create" : "none")
+				}
+			>
 				<DialogContent className="max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Create Quotation</DialogTitle>
@@ -596,7 +602,15 @@ function QuotePage() {
 				</DialogContent>
 			</Dialog>
 
-			<Dialog open={isAcceptDialogOpen} onOpenChange={setIsAcceptDialogOpen}>
+			<Dialog
+				open={isAcceptDialogOpen}
+				onOpenChange={(isOpen) => {
+					setQuoteDialogType(isOpen ? "accept" : "none");
+					if (!isOpen) {
+						setSelectedQuotationId(null);
+					}
+				}}
+			>
 				<DialogContent className="max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Accept Quotation</DialogTitle>
