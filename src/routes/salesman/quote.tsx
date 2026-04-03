@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { z } from "zod/v4";
@@ -72,7 +72,7 @@ type PaginatedCustomers = {
 	};
 };
 
-async function fetchCustomersByType(type: string): Promise<CustomerSummary[]> {
+async function fetchAllCustomers(): Promise<CustomerSummary[]> {
 	const perPage = 200;
 	let pageNumber = 1;
 	let lastPageNumber = 1;
@@ -80,14 +80,16 @@ async function fetchCustomersByType(type: string): Promise<CustomerSummary[]> {
 
 	do {
 		const response = await apiFetch<PaginatedCustomers>(
-			`/customers?type=${type}&per_page=${perPage}&page=${pageNumber}`,
+			`/customers?per_page=${perPage}&page=${pageNumber}`,
 		);
 		rows.push(...(response.data ?? []));
 		lastPageNumber = response.pagination?.last_page ?? pageNumber;
 		pageNumber += 1;
 	} while (pageNumber <= lastPageNumber);
 
-	return rows;
+	return rows.sort((leftCustomer, rightCustomer) =>
+		leftCustomer.name.localeCompare(rightCustomer.name),
+	);
 }
 
 type ProductSummary = {
@@ -152,7 +154,7 @@ type CreateQuotationForm = z.infer<typeof createQuotationSchema>;
 type CreateQuotationFormInput = z.input<typeof createQuotationSchema>;
 
 const acceptQuotationSchema = z.object({
-	customerId: z.string().min(1, "Doctor required"),
+	customerId: z.string().min(1, "Customer required"),
 });
 
 type AcceptQuotationForm = z.infer<typeof acceptQuotationSchema>;
@@ -163,10 +165,8 @@ export const Route = createFileRoute("/salesman/quote")({
 
 /// Quotation creation + list
 function QuotePage() {
-	const { hasRole, user } = useAuth();
-	const roleName = user?.role as string | undefined;
-	const isAdminUser =
-		isAuthDisabled || hasRole("superadmin", "editor") || roleName === "admin";
+	const { hasRole } = useAuth();
+	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
 
 	const queryClient = useQueryClient();
 	const [quoteDialogType, setQuoteDialogType] =
@@ -216,24 +216,19 @@ function QuotePage() {
 			apiFetch<PaginatedQuotations>(
 				`/quotations?per_page=20&page=${pageNumber}`,
 			),
+		enabled: isSuperAdminUser,
 	});
 
 	const careCustomersQuery = useQuery({
 		queryKey: ["customers-for-quote"],
-		queryFn: async () => {
-			const [doctors, hospitals] = await Promise.all([
-				fetchCustomersByType("doctor"),
-				fetchCustomersByType("hospital"),
-			]);
-			return [...doctors, ...hospitals].sort((leftCustomer, rightCustomer) =>
-				leftCustomer.name.localeCompare(rightCustomer.name),
-			);
-		},
+		queryFn: fetchAllCustomers,
+		enabled: isSuperAdminUser,
 	});
 
 	const productsQuery = useQuery({
 		queryKey: ["products-for-quote"],
 		queryFn: () => apiFetch<PaginatedProducts>("/products?per_page=200"),
+		enabled: isSuperAdminUser,
 	});
 
 	const productDetailsQuery = useQuery({
@@ -247,7 +242,7 @@ function QuotePage() {
 			);
 			return details.filter(Boolean) as ProductDetail[];
 		},
-		enabled: (productsQuery.data?.data?.length ?? 0) > 0,
+		enabled: isSuperAdminUser && (productsQuery.data?.data?.length ?? 0) > 0,
 	});
 
 	const productOptions = useMemo<SelectOption[]>(() => {
@@ -257,7 +252,7 @@ function QuotePage() {
 		}));
 	}, [productsQuery.data?.data]);
 
-	const doctorOptions = useMemo<SelectOption[]>(() => {
+	const customerOptions = useMemo<SelectOption[]>(() => {
 		return (careCustomersQuery.data ?? []).map((customer) => ({
 			value: String(customer.id),
 			label: `${customer.name} (${customer.type})`,
@@ -387,6 +382,8 @@ function QuotePage() {
 	const isCreateDialogOpen = quoteDialogType === "create";
 	const isAcceptDialogOpen = quoteDialogType === "accept";
 
+	if (!isSuperAdminUser) return <Navigate to="/salesman/inventory" />;
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
@@ -406,7 +403,7 @@ function QuotePage() {
 					<DialogHeader>
 						<DialogTitle>Create Quotation</DialogTitle>
 						<DialogDescription>
-							Select doctor, product variant-unit, and quantity for each item.
+							Select customer, product variant-unit, and quantity for each item.
 						</DialogDescription>
 					</DialogHeader>
 					<form
@@ -415,7 +412,7 @@ function QuotePage() {
 					>
 						<div className="flex flex-col gap-2">
 							<label htmlFor="quotation-doctor" className="text-sm font-medium">
-								Doctor / Hospital
+								Customer
 							</label>
 							<Controller
 								control={createForm.control}
@@ -426,12 +423,12 @@ function QuotePage() {
 										onValueChange={field.onChange}
 									>
 										<SelectTrigger id="quotation-doctor" className="w-full">
-											<SelectValue placeholder="Select doctor or hospital (optional)" />
+											<SelectValue placeholder="Select customer (optional)" />
 										</SelectTrigger>
 										<SelectContent>
-											{doctorOptions.map((doctor) => (
-												<SelectItem key={doctor.value} value={doctor.value}>
-													{doctor.label}
+											{customerOptions.map((customer) => (
+												<SelectItem key={customer.value} value={customer.value}>
+													{customer.label}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -615,7 +612,7 @@ function QuotePage() {
 					<DialogHeader>
 						<DialogTitle>Accept Quotation</DialogTitle>
 						<DialogDescription>
-							Select doctor or hospital before accepting this quotation.
+							Select customer before accepting this quotation.
 						</DialogDescription>
 					</DialogHeader>
 					<form
@@ -627,7 +624,7 @@ function QuotePage() {
 								htmlFor="accept-quotation-doctor"
 								className="text-sm font-medium"
 							>
-								Doctor / Hospital
+								Customer
 							</label>
 							<Controller
 								control={acceptForm.control}
@@ -638,12 +635,12 @@ function QuotePage() {
 											id="accept-quotation-doctor"
 											className="w-full"
 										>
-											<SelectValue placeholder="Select doctor or hospital" />
+											<SelectValue placeholder="Select customer" />
 										</SelectTrigger>
 										<SelectContent>
-											{doctorOptions.map((doctor) => (
-												<SelectItem key={doctor.value} value={doctor.value}>
-													{doctor.label}
+											{customerOptions.map((customer) => (
+												<SelectItem key={customer.value} value={customer.value}>
+													{customer.label}
 												</SelectItem>
 											))}
 										</SelectContent>
@@ -705,7 +702,7 @@ function QuotePage() {
 												{dateSortDirection === "asc" ? "Oldest" : "Newest"})
 											</Button>
 										</TableHead>
-										{isAdminUser && <TableHead>Actions</TableHead>}
+										{isSuperAdminUser && <TableHead>Actions</TableHead>}
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -723,7 +720,7 @@ function QuotePage() {
 											<TableCell>
 												{new Date(q.requested_at).toLocaleDateString()}
 											</TableCell>
-											{isAdminUser && (
+											{isSuperAdminUser && (
 												<TableCell>
 													<div className="flex items-center gap-2">
 														{q.status === "pending" && (

@@ -9,9 +9,9 @@ export const Route = createFileRoute("/salesman/")({
 /// Redirect salesman index
 function SalesmanIndexPage() {
 	const { hasRole } = useAuth();
-	const isAdminUser = isAuthDisabled || hasRole("superadmin", "editor");
+	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
 
-	if (isAdminUser) return <Navigate to="/salesman/overview" />;
+	if (isSuperAdminUser) return <Navigate to="/salesman/overview" />;
 
 	return <Navigate to="/salesman/inventory" />;
 }

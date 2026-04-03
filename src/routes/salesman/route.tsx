@@ -20,12 +20,10 @@ export const Route = createFileRoute("/salesman")({
 
 /// Salesman dashboard layout
 function SalesmanLayout() {
-	const { hasRole, user } = useAuth();
-	const roleName = user?.role as string | undefined;
-	const isAdminUser =
-		isAuthDisabled || hasRole("superadmin", "editor") || roleName === "admin";
+	const { hasRole } = useAuth();
+	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
 
-	const navGroups = isAdminUser
+	const navGroups = isSuperAdminUser
 		? [
 				{
 					label: "Dashboard",
@@ -66,11 +64,6 @@ function SalesmanLayout() {
 					label: "Sales",
 					items: [
 						{ label: "Inventory", icon: Package, to: "/salesman/inventory" },
-						{
-							label: "Quotations",
-							icon: ClipboardList,
-							to: "/salesman/quote",
-						},
 					],
 				},
 			];

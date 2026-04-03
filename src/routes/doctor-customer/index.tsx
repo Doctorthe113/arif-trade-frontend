@@ -18,7 +18,7 @@ export const Route = createFileRoute("/doctor-customer/")({
 
 /// Doctor-facing dashboard
 function DoctorCustomerPage() {
-	const { user, hasRole, logout } = useAuth();
+	const { user, logout } = useAuth();
 
 	const invoices = useQuery({
 		queryKey: ["doctor-invoices"],
@@ -60,7 +60,7 @@ function DoctorCustomerPage() {
 		0,
 	);
 
-	if (!isAuthDisabled && !hasRole("doctor")) return <Navigate to="/" />;
+	if (!isAuthDisabled) return <Navigate to="/" />;
 
 	return (
 		<div className="min-h-screen p-6">

@@ -7,7 +7,7 @@ import {
 	useState,
 } from "react";
 
-type UserRole = "superadmin" | "editor" | "viewer" | "salesman" | "doctor";
+type UserRole = "superadmin" | "editor" | "viewer" | "salesman";
 
 type User = {
 	name: string;

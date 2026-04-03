@@ -148,10 +148,9 @@ export const Route = createFileRoute("/salesman/inventory")({
 
 /// Inventory log + admin controls
 function InventoryPage() {
-	const { hasRole, user } = useAuth();
-	const roleName = user?.role as string | undefined;
-	const isAdminUser =
-		isAuthDisabled || hasRole("superadmin", "editor") || roleName === "admin";
+	const { hasRole } = useAuth();
+	const canManageCatalog = isAuthDisabled || hasRole("superadmin", "editor");
+	const canReadInventoryLog = isAuthDisabled || hasRole("superadmin");
 	const queryClient = useQueryClient();
 
 	const [pageNumber, setPageNumber] = useState(1);
@@ -202,7 +201,7 @@ function InventoryPage() {
 			apiFetch<PaginatedInventory>(
 				`/inventory/log?per_page=20&page=${pageNumber}`,
 			),
-		enabled: isAdminUser,
+		enabled: canReadInventoryLog,
 	});
 
 	const unitsQuery = useQuery({
@@ -447,7 +446,25 @@ function InventoryPage() {
 	}, [productDetailsQuery.data]);
 
 	const pagination = data?.pagination;
-	const displayedRows = isAdminUser ? inventoryRows : stockRows;
+	const displayedRows = canReadInventoryLog ? inventoryRows : stockRows;
+	const isTableLoading = canReadInventoryLog
+		? isLoading
+		: productsQuery.isLoading || productDetailsQuery.isLoading;
+	const tableErrorMessage = canReadInventoryLog
+		? isError
+			? inventoryError instanceof Error
+				? inventoryError.message
+				: "Failed to load inventory"
+			: null
+		: productsQuery.isError
+			? productsQuery.error instanceof Error
+				? productsQuery.error.message
+				: "Failed to load products"
+			: productDetailsQuery.isError
+				? productDetailsQuery.error instanceof Error
+					? productDetailsQuery.error.message
+					: "Failed to load product details"
+				: null;
 	const isAddDialogOpen = inventoryDialogType === "add";
 	const isUpdateDialogOpen = inventoryDialogType === "update";
 
@@ -463,7 +480,7 @@ function InventoryPage() {
 		<div className="space-y-6">
 			<div className="flex items-center justify-between gap-3">
 				<h1 className="text-2xl font-bold">Inventory</h1>
-				{isAdminUser && (
+				{canManageCatalog && (
 					<div className="flex items-center gap-2">
 						<Button
 							variant="outline"
@@ -821,18 +838,14 @@ function InventoryPage() {
 			<Card>
 				<CardHeader>
 					<CardTitle>
-						{isAdminUser ? "Inventory Log" : "Current Stock"}
+						{canReadInventoryLog ? "Inventory Log" : "Current Stock"}
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					{isLoading ? (
+					{isTableLoading ? (
 						<p className="text-muted-foreground text-sm">Loading...</p>
-					) : isError ? (
-						<p className="text-destructive text-sm">
-							{inventoryError instanceof Error
-								? inventoryError.message
-								: "Failed to load inventory"}
-						</p>
+					) : tableErrorMessage ? (
+						<p className="text-destructive text-sm">{tableErrorMessage}</p>
 					) : !displayedRows.length ? (
 						<p className="text-muted-foreground text-sm">
 							No inventory items found.
@@ -861,8 +874,12 @@ function InventoryPage() {
 										<TableHead>Unit</TableHead>
 										<TableHead>Variant</TableHead>
 										<TableHead>Qty</TableHead>
-										<TableHead>{isAdminUser ? "Action" : "Status"}</TableHead>
-										<TableHead>{isAdminUser ? "By" : "Source"}</TableHead>
+										<TableHead>
+											{canReadInventoryLog ? "Action" : "Status"}
+										</TableHead>
+										<TableHead>
+											{canReadInventoryLog ? "By" : "Source"}
+										</TableHead>
 										<TableHead>
 											<Button
 												variant="ghost"
@@ -877,7 +894,9 @@ function InventoryPage() {
 												{dateSortDirection === "asc" ? "Oldest" : "Newest"})
 											</Button>
 										</TableHead>
-										<TableHead>{isAdminUser ? "Note" : "Details"}</TableHead>
+										<TableHead>
+											{canReadInventoryLog ? "Note" : "Details"}
+										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -902,51 +921,55 @@ function InventoryPage() {
 											</TableCell>
 											<TableCell>{log.user_name}</TableCell>
 											<TableCell>
-												{isAdminUser
+												{canReadInventoryLog
 													? new Date(log.created_at).toLocaleDateString()
 													: "—"}
 											</TableCell>
 											<TableCell>
-												{isAdminUser ? (log.note ?? "—") : "Stock from catalog"}
+												{canReadInventoryLog
+													? (log.note ?? "—")
+													: "Stock from catalog"}
 											</TableCell>
 										</TableRow>
 									))}
 								</TableBody>
 							</Table>
-							<div className="mt-4 flex items-center justify-between">
-								<p className="text-muted-foreground text-sm">
-									Page {pagination?.page ?? 1} of {pagination?.last_page ?? 1} (
-									{pagination?.total ?? 0} total)
-								</p>
-								<div className="flex items-center gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={(pagination?.page ?? 1) <= 1}
-										onClick={() =>
-											setPageNumber((currentPageNumber) =>
-												Math.max(1, currentPageNumber - 1),
-											)
-										}
-									>
-										Previous
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										disabled={
-											(pagination?.page ?? 1) >= (pagination?.last_page ?? 1)
-										}
-										onClick={() =>
-											setPageNumber(
-												(currentPageNumber) => currentPageNumber + 1,
-											)
-										}
-									>
-										Next
-									</Button>
+							{canReadInventoryLog && (
+								<div className="mt-4 flex items-center justify-between">
+									<p className="text-muted-foreground text-sm">
+										Page {pagination?.page ?? 1} of {pagination?.last_page ?? 1}{" "}
+										({pagination?.total ?? 0} total)
+									</p>
+									<div className="flex items-center gap-2">
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={(pagination?.page ?? 1) <= 1}
+											onClick={() =>
+												setPageNumber((currentPageNumber) =>
+													Math.max(1, currentPageNumber - 1),
+												)
+											}
+										>
+											Previous
+										</Button>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={
+												(pagination?.page ?? 1) >= (pagination?.last_page ?? 1)
+											}
+											onClick={() =>
+												setPageNumber(
+													(currentPageNumber) => currentPageNumber + 1,
+												)
+											}
+										>
+											Next
+										</Button>
+									</div>
 								</div>
-							</div>
+							)}
 						</>
 					)}
 				</CardContent>

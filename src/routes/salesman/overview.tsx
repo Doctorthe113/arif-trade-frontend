@@ -56,7 +56,7 @@ type PaginatedInvoices = {
 	};
 };
 
-async function fetchCustomersByType(type: string): Promise<CustomerSummary[]> {
+async function fetchAllCustomers(): Promise<CustomerSummary[]> {
 	const perPage = 200;
 	let pageNumber = 1;
 	let lastPageNumber = 1;
@@ -64,7 +64,7 @@ async function fetchCustomersByType(type: string): Promise<CustomerSummary[]> {
 
 	do {
 		const response = await apiFetch<PaginatedCustomers>(
-			`/customers?type=${type}&per_page=${perPage}&page=${pageNumber}`,
+			`/customers?per_page=${perPage}&page=${pageNumber}`,
 		);
 		rows.push(...(response.data ?? []));
 		lastPageNumber = response.pagination?.last_page ?? pageNumber;
@@ -99,24 +99,18 @@ export const Route = createFileRoute("/salesman/overview")({
 /// Salesman overview / customer ledger
 function OverviewPage() {
 	const { hasRole } = useAuth();
-	const isAdminUser = isAuthDisabled || hasRole("superadmin", "editor");
+	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
 
 	const customers = useQuery({
 		queryKey: ["overview-ledger-customers"],
-		queryFn: async () => {
-			const [doctors, hospitals] = await Promise.all([
-				fetchCustomersByType("doctor"),
-				fetchCustomersByType("hospital"),
-			]);
-			return [...doctors, ...hospitals].sort((leftCustomer, rightCustomer) =>
-				leftCustomer.name.localeCompare(rightCustomer.name),
-			);
-		},
+		queryFn: fetchAllCustomers,
+		enabled: isSuperAdminUser,
 	});
 
 	const invoices = useQuery({
 		queryKey: ["overview-ledger-invoices"],
 		queryFn: fetchAllInvoices,
+		enabled: isSuperAdminUser,
 	});
 
 	const customerRows = customers.data ?? [];
@@ -157,7 +151,7 @@ function OverviewPage() {
 		(inv) => inv.status === "active",
 	).length;
 
-	if (!isAdminUser) return <Navigate to="/salesman/inventory" />;
+	if (!isSuperAdminUser) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">
@@ -196,10 +190,8 @@ function OverviewPage() {
 
 			<Card>
 				<CardHeader>
-					<CardTitle>Doctor & Hospital Ledger</CardTitle>
-					<CardDescription>
-						Sold and due amount per doctor/hospital
-					</CardDescription>
+					<CardTitle>Customer Ledger</CardTitle>
+					<CardDescription>Sold and due amount per customer</CardDescription>
 				</CardHeader>
 				<CardContent>
 					{customers.isLoading || invoices.isLoading ? (
@@ -217,9 +209,7 @@ function OverviewPage() {
 								: "Failed to load invoices"}
 						</p>
 					) : !customerRows.length ? (
-						<p className="text-muted-foreground text-sm">
-							No doctor or hospital found.
-						</p>
+						<p className="text-muted-foreground text-sm">No customers found.</p>
 					) : (
 						<Table>
 							<TableHeader>

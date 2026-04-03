@@ -26,7 +26,7 @@ export const Route = createFileRoute("/salesman/transaction")({
 /// Transaction / payment list
 function TransactionPage() {
 	const { hasRole } = useAuth();
-	const isAdminUser = isAuthDisabled || hasRole("superadmin", "editor");
+	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
 
 	const [invoiceId, setInvoiceId] = useState("");
 
@@ -43,7 +43,7 @@ function TransactionPage() {
 		enabled: invoiceId.length > 0,
 	});
 
-	if (!isAdminUser) return <Navigate to="/salesman/inventory" />;
+	if (!isSuperAdminUser) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">

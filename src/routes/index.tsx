@@ -14,13 +14,7 @@ function IndexRoute() {
 
 	if (!isAuthenticated) return <Navigate to="/login" />;
 
-	if (user?.role === "doctor") return <Navigate to="/doctor-customer" />;
 	if (user?.role === "superadmin") return <Navigate to="/salesman/overview" />;
-	if (user?.role === "editor") return <Navigate to="/salesman/overview" />;
-	if ((user?.role as string | undefined) === "admin") {
-		return <Navigate to="/salesman/overview" />;
-	}
-	if (user?.role === "salesman") return <Navigate to="/salesman/inventory" />;
 
 	return <Navigate to="/salesman/inventory" />;
 }
