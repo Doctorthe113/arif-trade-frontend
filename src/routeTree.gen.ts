@@ -21,8 +21,41 @@ import { Route as SalesmanQuoteRouteImport } from './routes/salesman/quote'
 import { Route as SalesmanOverviewRouteImport } from './routes/salesman/overview'
 import { Route as SalesmanInvoicesRouteImport } from './routes/salesman/invoices'
 import { Route as SalesmanInventoryRouteImport } from './routes/salesman/inventory'
+import { Route as AdminVariantsRouteImport } from './routes/admin/variants'
+import { Route as AdminVariantUnitsRouteImport } from './routes/admin/variant-units'
+import { Route as AdminVariantUnitInspectorRouteImport } from './routes/admin/variant-unit-inspector'
+import { Route as AdminVariantInspectorRouteImport } from './routes/admin/variant-inspector'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminUserInspectorRouteImport } from './routes/admin/user-inspector'
 import { Route as AdminUpdateUserRouteImport } from './routes/admin/update-user'
+import { Route as AdminUnitsRouteImport } from './routes/admin/units'
+import { Route as AdminUnitInspectorRouteImport } from './routes/admin/unit-inspector'
+import { Route as AdminSystemRouteImport } from './routes/admin/system'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
+import { Route as AdminQuotationsRouteImport } from './routes/admin/quotations'
+import { Route as AdminQuotationInspectorRouteImport } from './routes/admin/quotation-inspector'
+import { Route as AdminProductsRouteImport } from './routes/admin/products'
+import { Route as AdminProductInspectorRouteImport } from './routes/admin/product-inspector'
+import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
+import { Route as AdminPaymentInspectorRouteImport } from './routes/admin/payment-inspector'
+import { Route as AdminLotsRouteImport } from './routes/admin/lots'
+import { Route as AdminLotInspectorRouteImport } from './routes/admin/lot-inspector'
+import { Route as AdminInvoicesRouteImport } from './routes/admin/invoices'
+import { Route as AdminInvoiceInspectorRouteImport } from './routes/admin/invoice-inspector'
+import { Route as AdminInventoryInspectorRouteImport } from './routes/admin/inventory-inspector'
+import { Route as AdminInventoryRouteImport } from './routes/admin/inventory'
+import { Route as AdminDueInspectorRouteImport } from './routes/admin/due-inspector'
+import { Route as AdminDueCollectionRouteImport } from './routes/admin/due-collection'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminCustomersRouteImport } from './routes/admin/customers'
+import { Route as AdminCustomerLedgerRouteImport } from './routes/admin/customer-ledger'
+import { Route as AdminCustomerInspectorRouteImport } from './routes/admin/customer-inspector'
 import { Route as AdminCreateUserRouteImport } from './routes/admin/create-user'
+import { Route as AdminCategoryInspectorRouteImport } from './routes/admin/category-inspector'
+import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminApiInspectorRouteImport } from './routes/admin/api-inspector'
+import { Route as AdminApiDocsRouteImport } from './routes/admin/api-docs'
+import { Route as AdminAnalyticsInspectorRouteImport } from './routes/admin/analytics-inspector'
 
 const SalesmanRouteRoute = SalesmanRouteRouteImport.update({
   id: '/salesman',
@@ -84,9 +117,150 @@ const SalesmanInventoryRoute = SalesmanInventoryRouteImport.update({
   path: '/inventory',
   getParentRoute: () => SalesmanRouteRoute,
 } as any)
+const AdminVariantsRoute = AdminVariantsRouteImport.update({
+  id: '/variants',
+  path: '/variants',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminVariantUnitsRoute = AdminVariantUnitsRouteImport.update({
+  id: '/variant-units',
+  path: '/variant-units',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminVariantUnitInspectorRoute =
+  AdminVariantUnitInspectorRouteImport.update({
+    id: '/variant-unit-inspector',
+    path: '/variant-unit-inspector',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminVariantInspectorRoute = AdminVariantInspectorRouteImport.update({
+  id: '/variant-inspector',
+  path: '/variant-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUserInspectorRoute = AdminUserInspectorRouteImport.update({
+  id: '/user-inspector',
+  path: '/user-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminUpdateUserRoute = AdminUpdateUserRouteImport.update({
   id: '/update-user',
   path: '/update-user',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUnitsRoute = AdminUnitsRouteImport.update({
+  id: '/units',
+  path: '/units',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUnitInspectorRoute = AdminUnitInspectorRouteImport.update({
+  id: '/unit-inspector',
+  path: '/unit-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminSystemRoute = AdminSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminQuotationsRoute = AdminQuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminQuotationInspectorRoute = AdminQuotationInspectorRouteImport.update({
+  id: '/quotation-inspector',
+  path: '/quotation-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProductsRoute = AdminProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminProductInspectorRoute = AdminProductInspectorRouteImport.update({
+  id: '/product-inspector',
+  path: '/product-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPaymentInspectorRoute = AdminPaymentInspectorRouteImport.update({
+  id: '/payment-inspector',
+  path: '/payment-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLotsRoute = AdminLotsRouteImport.update({
+  id: '/lots',
+  path: '/lots',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLotInspectorRoute = AdminLotInspectorRouteImport.update({
+  id: '/lot-inspector',
+  path: '/lot-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInvoicesRoute = AdminInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInvoiceInspectorRoute = AdminInvoiceInspectorRouteImport.update({
+  id: '/invoice-inspector',
+  path: '/invoice-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInventoryInspectorRoute = AdminInventoryInspectorRouteImport.update({
+  id: '/inventory-inspector',
+  path: '/inventory-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminInventoryRoute = AdminInventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDueInspectorRoute = AdminDueInspectorRouteImport.update({
+  id: '/due-inspector',
+  path: '/due-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDueCollectionRoute = AdminDueCollectionRouteImport.update({
+  id: '/due-collection',
+  path: '/due-collection',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCustomersRoute = AdminCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCustomerLedgerRoute = AdminCustomerLedgerRouteImport.update({
+  id: '/customer-ledger',
+  path: '/customer-ledger',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCustomerInspectorRoute = AdminCustomerInspectorRouteImport.update({
+  id: '/customer-inspector',
+  path: '/customer-inspector',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
@@ -94,13 +268,71 @@ const AdminCreateUserRoute = AdminCreateUserRouteImport.update({
   path: '/create-user',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminCategoryInspectorRoute = AdminCategoryInspectorRouteImport.update({
+  id: '/category-inspector',
+  path: '/category-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminApiInspectorRoute = AdminApiInspectorRouteImport.update({
+  id: '/api-inspector',
+  path: '/api-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminApiDocsRoute = AdminApiDocsRouteImport.update({
+  id: '/api-docs',
+  path: '/api-docs',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAnalyticsInspectorRoute = AdminAnalyticsInspectorRouteImport.update({
+  id: '/analytics-inspector',
+  path: '/analytics-inspector',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/salesman': typeof SalesmanRouteRouteWithChildren
+  '/admin/analytics-inspector': typeof AdminAnalyticsInspectorRoute
+  '/admin/api-docs': typeof AdminApiDocsRoute
+  '/admin/api-inspector': typeof AdminApiInspectorRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/category-inspector': typeof AdminCategoryInspectorRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/customer-inspector': typeof AdminCustomerInspectorRoute
+  '/admin/customer-ledger': typeof AdminCustomerLedgerRoute
+  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/due-collection': typeof AdminDueCollectionRoute
+  '/admin/due-inspector': typeof AdminDueInspectorRoute
+  '/admin/inventory': typeof AdminInventoryRoute
+  '/admin/inventory-inspector': typeof AdminInventoryInspectorRoute
+  '/admin/invoice-inspector': typeof AdminInvoiceInspectorRoute
+  '/admin/invoices': typeof AdminInvoicesRoute
+  '/admin/lot-inspector': typeof AdminLotInspectorRoute
+  '/admin/lots': typeof AdminLotsRoute
+  '/admin/payment-inspector': typeof AdminPaymentInspectorRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/product-inspector': typeof AdminProductInspectorRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/quotation-inspector': typeof AdminQuotationInspectorRoute
+  '/admin/quotations': typeof AdminQuotationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/system': typeof AdminSystemRoute
+  '/admin/unit-inspector': typeof AdminUnitInspectorRoute
+  '/admin/units': typeof AdminUnitsRoute
   '/admin/update-user': typeof AdminUpdateUserRoute
+  '/admin/user-inspector': typeof AdminUserInspectorRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/variant-inspector': typeof AdminVariantInspectorRoute
+  '/admin/variant-unit-inspector': typeof AdminVariantUnitInspectorRoute
+  '/admin/variant-units': typeof AdminVariantUnitsRoute
+  '/admin/variants': typeof AdminVariantsRoute
   '/salesman/inventory': typeof SalesmanInventoryRoute
   '/salesman/invoices': typeof SalesmanInvoicesRoute
   '/salesman/overview': typeof SalesmanOverviewRoute
@@ -113,8 +345,41 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/analytics-inspector': typeof AdminAnalyticsInspectorRoute
+  '/admin/api-docs': typeof AdminApiDocsRoute
+  '/admin/api-inspector': typeof AdminApiInspectorRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/category-inspector': typeof AdminCategoryInspectorRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/customer-inspector': typeof AdminCustomerInspectorRoute
+  '/admin/customer-ledger': typeof AdminCustomerLedgerRoute
+  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/due-collection': typeof AdminDueCollectionRoute
+  '/admin/due-inspector': typeof AdminDueInspectorRoute
+  '/admin/inventory': typeof AdminInventoryRoute
+  '/admin/inventory-inspector': typeof AdminInventoryInspectorRoute
+  '/admin/invoice-inspector': typeof AdminInvoiceInspectorRoute
+  '/admin/invoices': typeof AdminInvoicesRoute
+  '/admin/lot-inspector': typeof AdminLotInspectorRoute
+  '/admin/lots': typeof AdminLotsRoute
+  '/admin/payment-inspector': typeof AdminPaymentInspectorRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/product-inspector': typeof AdminProductInspectorRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/quotation-inspector': typeof AdminQuotationInspectorRoute
+  '/admin/quotations': typeof AdminQuotationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/system': typeof AdminSystemRoute
+  '/admin/unit-inspector': typeof AdminUnitInspectorRoute
+  '/admin/units': typeof AdminUnitsRoute
   '/admin/update-user': typeof AdminUpdateUserRoute
+  '/admin/user-inspector': typeof AdminUserInspectorRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/variant-inspector': typeof AdminVariantInspectorRoute
+  '/admin/variant-unit-inspector': typeof AdminVariantUnitInspectorRoute
+  '/admin/variant-units': typeof AdminVariantUnitsRoute
+  '/admin/variants': typeof AdminVariantsRoute
   '/salesman/inventory': typeof SalesmanInventoryRoute
   '/salesman/invoices': typeof SalesmanInvoicesRoute
   '/salesman/overview': typeof SalesmanOverviewRoute
@@ -130,8 +395,41 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/salesman': typeof SalesmanRouteRouteWithChildren
+  '/admin/analytics-inspector': typeof AdminAnalyticsInspectorRoute
+  '/admin/api-docs': typeof AdminApiDocsRoute
+  '/admin/api-inspector': typeof AdminApiInspectorRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/category-inspector': typeof AdminCategoryInspectorRoute
   '/admin/create-user': typeof AdminCreateUserRoute
+  '/admin/customer-inspector': typeof AdminCustomerInspectorRoute
+  '/admin/customer-ledger': typeof AdminCustomerLedgerRoute
+  '/admin/customers': typeof AdminCustomersRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/due-collection': typeof AdminDueCollectionRoute
+  '/admin/due-inspector': typeof AdminDueInspectorRoute
+  '/admin/inventory': typeof AdminInventoryRoute
+  '/admin/inventory-inspector': typeof AdminInventoryInspectorRoute
+  '/admin/invoice-inspector': typeof AdminInvoiceInspectorRoute
+  '/admin/invoices': typeof AdminInvoicesRoute
+  '/admin/lot-inspector': typeof AdminLotInspectorRoute
+  '/admin/lots': typeof AdminLotsRoute
+  '/admin/payment-inspector': typeof AdminPaymentInspectorRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/product-inspector': typeof AdminProductInspectorRoute
+  '/admin/products': typeof AdminProductsRoute
+  '/admin/quotation-inspector': typeof AdminQuotationInspectorRoute
+  '/admin/quotations': typeof AdminQuotationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/system': typeof AdminSystemRoute
+  '/admin/unit-inspector': typeof AdminUnitInspectorRoute
+  '/admin/units': typeof AdminUnitsRoute
   '/admin/update-user': typeof AdminUpdateUserRoute
+  '/admin/user-inspector': typeof AdminUserInspectorRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/variant-inspector': typeof AdminVariantInspectorRoute
+  '/admin/variant-unit-inspector': typeof AdminVariantUnitInspectorRoute
+  '/admin/variant-units': typeof AdminVariantUnitsRoute
+  '/admin/variants': typeof AdminVariantsRoute
   '/salesman/inventory': typeof SalesmanInventoryRoute
   '/salesman/invoices': typeof SalesmanInvoicesRoute
   '/salesman/overview': typeof SalesmanOverviewRoute
@@ -148,8 +446,41 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/salesman'
+    | '/admin/analytics-inspector'
+    | '/admin/api-docs'
+    | '/admin/api-inspector'
+    | '/admin/categories'
+    | '/admin/category-inspector'
     | '/admin/create-user'
+    | '/admin/customer-inspector'
+    | '/admin/customer-ledger'
+    | '/admin/customers'
+    | '/admin/dashboard'
+    | '/admin/due-collection'
+    | '/admin/due-inspector'
+    | '/admin/inventory'
+    | '/admin/inventory-inspector'
+    | '/admin/invoice-inspector'
+    | '/admin/invoices'
+    | '/admin/lot-inspector'
+    | '/admin/lots'
+    | '/admin/payment-inspector'
+    | '/admin/payments'
+    | '/admin/product-inspector'
+    | '/admin/products'
+    | '/admin/quotation-inspector'
+    | '/admin/quotations'
+    | '/admin/reports'
+    | '/admin/system'
+    | '/admin/unit-inspector'
+    | '/admin/units'
     | '/admin/update-user'
+    | '/admin/user-inspector'
+    | '/admin/users'
+    | '/admin/variant-inspector'
+    | '/admin/variant-unit-inspector'
+    | '/admin/variant-units'
+    | '/admin/variants'
     | '/salesman/inventory'
     | '/salesman/invoices'
     | '/salesman/overview'
@@ -162,8 +493,41 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/analytics-inspector'
+    | '/admin/api-docs'
+    | '/admin/api-inspector'
+    | '/admin/categories'
+    | '/admin/category-inspector'
     | '/admin/create-user'
+    | '/admin/customer-inspector'
+    | '/admin/customer-ledger'
+    | '/admin/customers'
+    | '/admin/dashboard'
+    | '/admin/due-collection'
+    | '/admin/due-inspector'
+    | '/admin/inventory'
+    | '/admin/inventory-inspector'
+    | '/admin/invoice-inspector'
+    | '/admin/invoices'
+    | '/admin/lot-inspector'
+    | '/admin/lots'
+    | '/admin/payment-inspector'
+    | '/admin/payments'
+    | '/admin/product-inspector'
+    | '/admin/products'
+    | '/admin/quotation-inspector'
+    | '/admin/quotations'
+    | '/admin/reports'
+    | '/admin/system'
+    | '/admin/unit-inspector'
+    | '/admin/units'
     | '/admin/update-user'
+    | '/admin/user-inspector'
+    | '/admin/users'
+    | '/admin/variant-inspector'
+    | '/admin/variant-unit-inspector'
+    | '/admin/variant-units'
+    | '/admin/variants'
     | '/salesman/inventory'
     | '/salesman/invoices'
     | '/salesman/overview'
@@ -178,8 +542,41 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/salesman'
+    | '/admin/analytics-inspector'
+    | '/admin/api-docs'
+    | '/admin/api-inspector'
+    | '/admin/categories'
+    | '/admin/category-inspector'
     | '/admin/create-user'
+    | '/admin/customer-inspector'
+    | '/admin/customer-ledger'
+    | '/admin/customers'
+    | '/admin/dashboard'
+    | '/admin/due-collection'
+    | '/admin/due-inspector'
+    | '/admin/inventory'
+    | '/admin/inventory-inspector'
+    | '/admin/invoice-inspector'
+    | '/admin/invoices'
+    | '/admin/lot-inspector'
+    | '/admin/lots'
+    | '/admin/payment-inspector'
+    | '/admin/payments'
+    | '/admin/product-inspector'
+    | '/admin/products'
+    | '/admin/quotation-inspector'
+    | '/admin/quotations'
+    | '/admin/reports'
+    | '/admin/system'
+    | '/admin/unit-inspector'
+    | '/admin/units'
     | '/admin/update-user'
+    | '/admin/user-inspector'
+    | '/admin/users'
+    | '/admin/variant-inspector'
+    | '/admin/variant-unit-inspector'
+    | '/admin/variant-units'
+    | '/admin/variants'
     | '/salesman/inventory'
     | '/salesman/invoices'
     | '/salesman/overview'
@@ -285,11 +682,207 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalesmanInventoryRouteImport
       parentRoute: typeof SalesmanRouteRoute
     }
+    '/admin/variants': {
+      id: '/admin/variants'
+      path: '/variants'
+      fullPath: '/admin/variants'
+      preLoaderRoute: typeof AdminVariantsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/variant-units': {
+      id: '/admin/variant-units'
+      path: '/variant-units'
+      fullPath: '/admin/variant-units'
+      preLoaderRoute: typeof AdminVariantUnitsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/variant-unit-inspector': {
+      id: '/admin/variant-unit-inspector'
+      path: '/variant-unit-inspector'
+      fullPath: '/admin/variant-unit-inspector'
+      preLoaderRoute: typeof AdminVariantUnitInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/variant-inspector': {
+      id: '/admin/variant-inspector'
+      path: '/variant-inspector'
+      fullPath: '/admin/variant-inspector'
+      preLoaderRoute: typeof AdminVariantInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/user-inspector': {
+      id: '/admin/user-inspector'
+      path: '/user-inspector'
+      fullPath: '/admin/user-inspector'
+      preLoaderRoute: typeof AdminUserInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/update-user': {
       id: '/admin/update-user'
       path: '/update-user'
       fullPath: '/admin/update-user'
       preLoaderRoute: typeof AdminUpdateUserRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/units': {
+      id: '/admin/units'
+      path: '/units'
+      fullPath: '/admin/units'
+      preLoaderRoute: typeof AdminUnitsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/unit-inspector': {
+      id: '/admin/unit-inspector'
+      path: '/unit-inspector'
+      fullPath: '/admin/unit-inspector'
+      preLoaderRoute: typeof AdminUnitInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/system': {
+      id: '/admin/system'
+      path: '/system'
+      fullPath: '/admin/system'
+      preLoaderRoute: typeof AdminSystemRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/quotations': {
+      id: '/admin/quotations'
+      path: '/quotations'
+      fullPath: '/admin/quotations'
+      preLoaderRoute: typeof AdminQuotationsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/quotation-inspector': {
+      id: '/admin/quotation-inspector'
+      path: '/quotation-inspector'
+      fullPath: '/admin/quotation-inspector'
+      preLoaderRoute: typeof AdminQuotationInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/products': {
+      id: '/admin/products'
+      path: '/products'
+      fullPath: '/admin/products'
+      preLoaderRoute: typeof AdminProductsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/product-inspector': {
+      id: '/admin/product-inspector'
+      path: '/product-inspector'
+      fullPath: '/admin/product-inspector'
+      preLoaderRoute: typeof AdminProductInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/payment-inspector': {
+      id: '/admin/payment-inspector'
+      path: '/payment-inspector'
+      fullPath: '/admin/payment-inspector'
+      preLoaderRoute: typeof AdminPaymentInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/lots': {
+      id: '/admin/lots'
+      path: '/lots'
+      fullPath: '/admin/lots'
+      preLoaderRoute: typeof AdminLotsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/lot-inspector': {
+      id: '/admin/lot-inspector'
+      path: '/lot-inspector'
+      fullPath: '/admin/lot-inspector'
+      preLoaderRoute: typeof AdminLotInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/invoices': {
+      id: '/admin/invoices'
+      path: '/invoices'
+      fullPath: '/admin/invoices'
+      preLoaderRoute: typeof AdminInvoicesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/invoice-inspector': {
+      id: '/admin/invoice-inspector'
+      path: '/invoice-inspector'
+      fullPath: '/admin/invoice-inspector'
+      preLoaderRoute: typeof AdminInvoiceInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/inventory-inspector': {
+      id: '/admin/inventory-inspector'
+      path: '/inventory-inspector'
+      fullPath: '/admin/inventory-inspector'
+      preLoaderRoute: typeof AdminInventoryInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/inventory': {
+      id: '/admin/inventory'
+      path: '/inventory'
+      fullPath: '/admin/inventory'
+      preLoaderRoute: typeof AdminInventoryRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/due-inspector': {
+      id: '/admin/due-inspector'
+      path: '/due-inspector'
+      fullPath: '/admin/due-inspector'
+      preLoaderRoute: typeof AdminDueInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/due-collection': {
+      id: '/admin/due-collection'
+      path: '/due-collection'
+      fullPath: '/admin/due-collection'
+      preLoaderRoute: typeof AdminDueCollectionRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/customers': {
+      id: '/admin/customers'
+      path: '/customers'
+      fullPath: '/admin/customers'
+      preLoaderRoute: typeof AdminCustomersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/customer-ledger': {
+      id: '/admin/customer-ledger'
+      path: '/customer-ledger'
+      fullPath: '/admin/customer-ledger'
+      preLoaderRoute: typeof AdminCustomerLedgerRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/customer-inspector': {
+      id: '/admin/customer-inspector'
+      path: '/customer-inspector'
+      fullPath: '/admin/customer-inspector'
+      preLoaderRoute: typeof AdminCustomerInspectorRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/create-user': {
@@ -299,18 +892,119 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCreateUserRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/category-inspector': {
+      id: '/admin/category-inspector'
+      path: '/category-inspector'
+      fullPath: '/admin/category-inspector'
+      preLoaderRoute: typeof AdminCategoryInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/api-inspector': {
+      id: '/admin/api-inspector'
+      path: '/api-inspector'
+      fullPath: '/admin/api-inspector'
+      preLoaderRoute: typeof AdminApiInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/api-docs': {
+      id: '/admin/api-docs'
+      path: '/api-docs'
+      fullPath: '/admin/api-docs'
+      preLoaderRoute: typeof AdminApiDocsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/analytics-inspector': {
+      id: '/admin/analytics-inspector'
+      path: '/analytics-inspector'
+      fullPath: '/admin/analytics-inspector'
+      preLoaderRoute: typeof AdminAnalyticsInspectorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
 interface AdminRouteRouteChildren {
+  AdminAnalyticsInspectorRoute: typeof AdminAnalyticsInspectorRoute
+  AdminApiDocsRoute: typeof AdminApiDocsRoute
+  AdminApiInspectorRoute: typeof AdminApiInspectorRoute
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminCategoryInspectorRoute: typeof AdminCategoryInspectorRoute
   AdminCreateUserRoute: typeof AdminCreateUserRoute
+  AdminCustomerInspectorRoute: typeof AdminCustomerInspectorRoute
+  AdminCustomerLedgerRoute: typeof AdminCustomerLedgerRoute
+  AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminDueCollectionRoute: typeof AdminDueCollectionRoute
+  AdminDueInspectorRoute: typeof AdminDueInspectorRoute
+  AdminInventoryRoute: typeof AdminInventoryRoute
+  AdminInventoryInspectorRoute: typeof AdminInventoryInspectorRoute
+  AdminInvoiceInspectorRoute: typeof AdminInvoiceInspectorRoute
+  AdminInvoicesRoute: typeof AdminInvoicesRoute
+  AdminLotInspectorRoute: typeof AdminLotInspectorRoute
+  AdminLotsRoute: typeof AdminLotsRoute
+  AdminPaymentInspectorRoute: typeof AdminPaymentInspectorRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminProductInspectorRoute: typeof AdminProductInspectorRoute
+  AdminProductsRoute: typeof AdminProductsRoute
+  AdminQuotationInspectorRoute: typeof AdminQuotationInspectorRoute
+  AdminQuotationsRoute: typeof AdminQuotationsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminSystemRoute: typeof AdminSystemRoute
+  AdminUnitInspectorRoute: typeof AdminUnitInspectorRoute
+  AdminUnitsRoute: typeof AdminUnitsRoute
   AdminUpdateUserRoute: typeof AdminUpdateUserRoute
+  AdminUserInspectorRoute: typeof AdminUserInspectorRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminVariantInspectorRoute: typeof AdminVariantInspectorRoute
+  AdminVariantUnitInspectorRoute: typeof AdminVariantUnitInspectorRoute
+  AdminVariantUnitsRoute: typeof AdminVariantUnitsRoute
+  AdminVariantsRoute: typeof AdminVariantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAnalyticsInspectorRoute: AdminAnalyticsInspectorRoute,
+  AdminApiDocsRoute: AdminApiDocsRoute,
+  AdminApiInspectorRoute: AdminApiInspectorRoute,
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminCategoryInspectorRoute: AdminCategoryInspectorRoute,
   AdminCreateUserRoute: AdminCreateUserRoute,
+  AdminCustomerInspectorRoute: AdminCustomerInspectorRoute,
+  AdminCustomerLedgerRoute: AdminCustomerLedgerRoute,
+  AdminCustomersRoute: AdminCustomersRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminDueCollectionRoute: AdminDueCollectionRoute,
+  AdminDueInspectorRoute: AdminDueInspectorRoute,
+  AdminInventoryRoute: AdminInventoryRoute,
+  AdminInventoryInspectorRoute: AdminInventoryInspectorRoute,
+  AdminInvoiceInspectorRoute: AdminInvoiceInspectorRoute,
+  AdminInvoicesRoute: AdminInvoicesRoute,
+  AdminLotInspectorRoute: AdminLotInspectorRoute,
+  AdminLotsRoute: AdminLotsRoute,
+  AdminPaymentInspectorRoute: AdminPaymentInspectorRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminProductInspectorRoute: AdminProductInspectorRoute,
+  AdminProductsRoute: AdminProductsRoute,
+  AdminQuotationInspectorRoute: AdminQuotationInspectorRoute,
+  AdminQuotationsRoute: AdminQuotationsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminSystemRoute: AdminSystemRoute,
+  AdminUnitInspectorRoute: AdminUnitInspectorRoute,
+  AdminUnitsRoute: AdminUnitsRoute,
   AdminUpdateUserRoute: AdminUpdateUserRoute,
+  AdminUserInspectorRoute: AdminUserInspectorRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminVariantInspectorRoute: AdminVariantInspectorRoute,
+  AdminVariantUnitInspectorRoute: AdminVariantUnitInspectorRoute,
+  AdminVariantUnitsRoute: AdminVariantUnitsRoute,
+  AdminVariantsRoute: AdminVariantsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

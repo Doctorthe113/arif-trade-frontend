@@ -6,5 +6,5 @@ export const Route = createFileRoute("/admin/")({
 
 /// Redirect admin index
 function AdminIndexPage() {
-	return <Navigate to="/admin/create-user" />;
+	return <Navigate to="/admin/dashboard" />;
 }
