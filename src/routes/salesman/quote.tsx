@@ -167,6 +167,7 @@ export const Route = createFileRoute("/salesman/quote")({
 function QuotePage() {
 	const { hasRole } = useAuth();
 	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
+	const canAccessSalesmanQuotations = isSuperAdminUser || hasRole("salesman");
 
 	const queryClient = useQueryClient();
 	const [quoteDialogType, setQuoteDialogType] =
@@ -216,19 +217,19 @@ function QuotePage() {
 			apiFetch<PaginatedQuotations>(
 				`/quotations?per_page=20&page=${pageNumber}`,
 			),
-		enabled: isSuperAdminUser,
+		enabled: canAccessSalesmanQuotations,
 	});
 
 	const careCustomersQuery = useQuery({
 		queryKey: ["customers-for-quote"],
 		queryFn: fetchAllCustomers,
-		enabled: isSuperAdminUser,
+		enabled: canAccessSalesmanQuotations,
 	});
 
 	const productsQuery = useQuery({
 		queryKey: ["products-for-quote"],
 		queryFn: () => apiFetch<PaginatedProducts>("/products?per_page=200"),
-		enabled: isSuperAdminUser,
+		enabled: canAccessSalesmanQuotations,
 	});
 
 	const productDetailsQuery = useQuery({
@@ -242,7 +243,9 @@ function QuotePage() {
 			);
 			return details.filter(Boolean) as ProductDetail[];
 		},
-		enabled: isSuperAdminUser && (productsQuery.data?.data?.length ?? 0) > 0,
+		enabled:
+			canAccessSalesmanQuotations &&
+			(productsQuery.data?.data?.length ?? 0) > 0,
 	});
 
 	const productOptions = useMemo<SelectOption[]>(() => {
@@ -382,7 +385,8 @@ function QuotePage() {
 	const isCreateDialogOpen = quoteDialogType === "create";
 	const isAcceptDialogOpen = quoteDialogType === "accept";
 
-	if (!isSuperAdminUser) return <Navigate to="/salesman/inventory" />;
+	if (!canAccessSalesmanQuotations)
+		return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">
