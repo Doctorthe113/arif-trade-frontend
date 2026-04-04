@@ -44,7 +44,8 @@ export const Route = createFileRoute("/salesman/invoices")({
 /// Invoice list table
 function InvoicesPage() {
 	const { hasRole } = useAuth();
-	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
+	const canAccessSalesmanDashboard =
+		isAuthDisabled || hasRole("superadmin") || hasRole("salesman");
 
 	const [pageNumber, setPageNumber] = useState(1);
 	const [dateSortDirection, setDateSortDirection] = useState<"asc" | "desc">(
@@ -73,7 +74,7 @@ function InvoicesPage() {
 
 	const pagination = data?.pagination;
 
-	if (!isSuperAdminUser) return <Navigate to="/salesman/inventory" />;
+	if (!canAccessSalesmanDashboard) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">

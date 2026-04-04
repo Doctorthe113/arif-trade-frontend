@@ -99,18 +99,19 @@ export const Route = createFileRoute("/salesman/overview")({
 /// Salesman overview / customer ledger
 function OverviewPage() {
 	const { hasRole } = useAuth();
-	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
+	const canAccessSalesmanDashboard =
+		isAuthDisabled || hasRole("superadmin") || hasRole("salesman");
 
 	const customers = useQuery({
 		queryKey: ["overview-ledger-customers"],
 		queryFn: fetchAllCustomers,
-		enabled: isSuperAdminUser,
+		enabled: canAccessSalesmanDashboard,
 	});
 
 	const invoices = useQuery({
 		queryKey: ["overview-ledger-invoices"],
 		queryFn: fetchAllInvoices,
-		enabled: isSuperAdminUser,
+		enabled: canAccessSalesmanDashboard,
 	});
 
 	const customerRows = customers.data ?? [];
@@ -151,7 +152,7 @@ function OverviewPage() {
 		(inv) => inv.status === "active",
 	).length;
 
-	if (!isSuperAdminUser) return <Navigate to="/salesman/inventory" />;
+	if (!canAccessSalesmanDashboard) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">
