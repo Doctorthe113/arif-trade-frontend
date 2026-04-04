@@ -22,8 +22,8 @@ export type AppNavGroup = {
 	items: AppNavItem[];
 };
 
-const salesmanDashboardNavGroup: AppNavGroup = {
-	label: "Dashboard",
+const sharedSalesNavGroup: AppNavGroup = {
+	label: "Sales",
 	items: [
 		{ label: "Overview", icon: BarChart3, to: "/salesman/overview" },
 		{ label: "Invoices", icon: FileText, to: "/salesman/invoices" },
@@ -40,19 +40,9 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/dashboard",
 		},
 		{
-			label: "Reports",
-			icon: BarChart3,
-			to: "/admin/reports",
-		},
-		{
 			label: "Analytics Inspector",
 			icon: BarChart3,
 			to: "/admin/analytics-inspector",
-		},
-		{
-			label: "System",
-			icon: Shield,
-			to: "/admin/system",
 		},
 		{
 			label: "API Docs",
@@ -65,9 +55,34 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/api-inspector",
 		},
 		{
+			label: "Categories",
+			icon: ClipboardList,
+			to: "/admin/categories",
+		},
+		{
+			label: "Category Inspector",
+			icon: FileText,
+			to: "/admin/category-inspector",
+		},
+		{
+			label: "Create User",
+			icon: UserPlus,
+			to: "/admin/create-user",
+		},
+		{
+			label: "Customer Inspector",
+			icon: Users,
+			to: "/admin/customer-inspector",
+		},
+		{
 			label: "Customer Ledger",
 			icon: FileText,
 			to: "/admin/customer-ledger",
+		},
+		{
+			label: "Customers",
+			icon: Users,
+			to: "/admin/customers",
 		},
 		{
 			label: "Due Collection",
@@ -80,36 +95,6 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/due-inspector",
 		},
 		{
-			label: "Invoices",
-			icon: FileText,
-			to: "/admin/invoices",
-		},
-		{
-			label: "Invoice Inspector",
-			icon: FileText,
-			to: "/admin/invoice-inspector",
-		},
-		{
-			label: "Payments",
-			icon: ArrowRightLeft,
-			to: "/admin/payments",
-		},
-		{
-			label: "Payment Inspector",
-			icon: FileText,
-			to: "/admin/payment-inspector",
-		},
-		{
-			label: "Quotations",
-			icon: ClipboardList,
-			to: "/admin/quotations",
-		},
-		{
-			label: "Quotation Inspector",
-			icon: FileText,
-			to: "/admin/quotation-inspector",
-		},
-		{
 			label: "Inventory",
 			icon: Package,
 			to: "/admin/inventory",
@@ -120,19 +105,34 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/inventory-inspector",
 		},
 		{
-			label: "Customers",
-			icon: Users,
-			to: "/admin/customers",
+			label: "Invoice Inspector",
+			icon: FileText,
+			to: "/admin/invoice-inspector",
 		},
 		{
-			label: "Customer Inspector",
-			icon: Users,
-			to: "/admin/customer-inspector",
+			label: "Invoices",
+			icon: FileText,
+			to: "/admin/invoices",
 		},
 		{
-			label: "Products",
+			label: "Lot Inspector",
+			icon: FileText,
+			to: "/admin/lot-inspector",
+		},
+		{
+			label: "Lots",
 			icon: Package,
-			to: "/admin/products",
+			to: "/admin/lots",
+		},
+		{
+			label: "Payment Inspector",
+			icon: FileText,
+			to: "/admin/payment-inspector",
+		},
+		{
+			label: "Payments",
+			icon: ArrowRightLeft,
+			to: "/admin/payments",
 		},
 		{
 			label: "Product Inspector",
@@ -140,24 +140,34 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/product-inspector",
 		},
 		{
-			label: "Variants",
+			label: "Products",
 			icon: Package,
-			to: "/admin/variants",
+			to: "/admin/products",
 		},
 		{
-			label: "Variant Inspector",
+			label: "Quotation Inspector",
 			icon: FileText,
-			to: "/admin/variant-inspector",
+			to: "/admin/quotation-inspector",
 		},
 		{
-			label: "Categories",
+			label: "Quotations",
 			icon: ClipboardList,
-			to: "/admin/categories",
+			to: "/admin/quotations",
 		},
 		{
-			label: "Category Inspector",
+			label: "Reports",
+			icon: BarChart3,
+			to: "/admin/reports",
+		},
+		{
+			label: "System",
+			icon: Shield,
+			to: "/admin/system",
+		},
+		{
+			label: "Unit Inspector",
 			icon: FileText,
-			to: "/admin/category-inspector",
+			to: "/admin/unit-inspector",
 		},
 		{
 			label: "Units",
@@ -165,9 +175,24 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/units",
 		},
 		{
-			label: "Unit Inspector",
+			label: "Update User",
+			icon: UserCog,
+			to: "/admin/update-user",
+		},
+		{
+			label: "User Inspector",
 			icon: FileText,
-			to: "/admin/unit-inspector",
+			to: "/admin/user-inspector",
+		},
+		{
+			label: "Users",
+			icon: UserCog,
+			to: "/admin/users",
+		},
+		{
+			label: "Variant Inspector",
+			icon: FileText,
+			to: "/admin/variant-inspector",
 		},
 		{
 			label: "Variant Units",
@@ -180,46 +205,21 @@ const adminNavGroup: AppNavGroup = {
 			to: "/admin/variant-unit-inspector",
 		},
 		{
-			label: "Lots",
+			label: "Variants",
 			icon: Package,
-			to: "/admin/lots",
-		},
-		{
-			label: "Lot Inspector",
-			icon: FileText,
-			to: "/admin/lot-inspector",
-		},
-		{
-			label: "Users",
-			icon: UserCog,
-			to: "/admin/users",
-		},
-		{
-			label: "User Inspector",
-			icon: FileText,
-			to: "/admin/user-inspector",
-		},
-		{
-			label: "Create User",
-			icon: UserPlus,
-			to: "/admin/create-user",
-		},
-		{
-			label: "Update User",
-			icon: UserCog,
-			to: "/admin/update-user",
+			to: "/admin/variants",
 		},
 	],
 };
 
 export function getAdminNavGroups(): AppNavGroup[] {
-	return [adminNavGroup];
+	return [sharedSalesNavGroup, adminNavGroup];
 }
 
 export function getSalesmanNavGroups(isSuperAdminUser: boolean): AppNavGroup[] {
 	if (isSuperAdminUser) {
-		return [salesmanDashboardNavGroup, adminNavGroup];
+		return [sharedSalesNavGroup, adminNavGroup];
 	}
 
-	return [salesmanDashboardNavGroup];
+	return [sharedSalesNavGroup];
 }
