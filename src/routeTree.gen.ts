@@ -16,7 +16,6 @@ import { Route as SalesmanIndexRouteImport } from './routes/salesman/index'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as DoctorCustomerIndexRouteImport } from './routes/doctor-customer/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as SalesmanTransactionRouteImport } from './routes/salesman/transaction'
 import { Route as SalesmanQuoteRouteImport } from './routes/salesman/quote'
 import { Route as SalesmanOverviewRouteImport } from './routes/salesman/overview'
 import { Route as SalesmanInvoicesRouteImport } from './routes/salesman/invoices'
@@ -91,11 +90,6 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRouteRoute,
-} as any)
-const SalesmanTransactionRoute = SalesmanTransactionRouteImport.update({
-  id: '/transaction',
-  path: '/transaction',
-  getParentRoute: () => SalesmanRouteRoute,
 } as any)
 const SalesmanQuoteRoute = SalesmanQuoteRouteImport.update({
   id: '/quote',
@@ -337,7 +331,6 @@ export interface FileRoutesByFullPath {
   '/salesman/invoices': typeof SalesmanInvoicesRoute
   '/salesman/overview': typeof SalesmanOverviewRoute
   '/salesman/quote': typeof SalesmanQuoteRoute
-  '/salesman/transaction': typeof SalesmanTransactionRoute
   '/admin/': typeof AdminIndexRoute
   '/doctor-customer/': typeof DoctorCustomerIndexRoute
   '/login/': typeof LoginIndexRoute
@@ -384,7 +377,6 @@ export interface FileRoutesByTo {
   '/salesman/invoices': typeof SalesmanInvoicesRoute
   '/salesman/overview': typeof SalesmanOverviewRoute
   '/salesman/quote': typeof SalesmanQuoteRoute
-  '/salesman/transaction': typeof SalesmanTransactionRoute
   '/admin': typeof AdminIndexRoute
   '/doctor-customer': typeof DoctorCustomerIndexRoute
   '/login': typeof LoginIndexRoute
@@ -434,7 +426,6 @@ export interface FileRoutesById {
   '/salesman/invoices': typeof SalesmanInvoicesRoute
   '/salesman/overview': typeof SalesmanOverviewRoute
   '/salesman/quote': typeof SalesmanQuoteRoute
-  '/salesman/transaction': typeof SalesmanTransactionRoute
   '/admin/': typeof AdminIndexRoute
   '/doctor-customer/': typeof DoctorCustomerIndexRoute
   '/login/': typeof LoginIndexRoute
@@ -485,7 +476,6 @@ export interface FileRouteTypes {
     | '/salesman/invoices'
     | '/salesman/overview'
     | '/salesman/quote'
-    | '/salesman/transaction'
     | '/admin/'
     | '/doctor-customer/'
     | '/login/'
@@ -532,7 +522,6 @@ export interface FileRouteTypes {
     | '/salesman/invoices'
     | '/salesman/overview'
     | '/salesman/quote'
-    | '/salesman/transaction'
     | '/admin'
     | '/doctor-customer'
     | '/login'
@@ -581,7 +570,6 @@ export interface FileRouteTypes {
     | '/salesman/invoices'
     | '/salesman/overview'
     | '/salesman/quote'
-    | '/salesman/transaction'
     | '/admin/'
     | '/doctor-customer/'
     | '/login/'
@@ -646,13 +634,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
-    }
-    '/salesman/transaction': {
-      id: '/salesman/transaction'
-      path: '/transaction'
-      fullPath: '/salesman/transaction'
-      preLoaderRoute: typeof SalesmanTransactionRouteImport
-      parentRoute: typeof SalesmanRouteRoute
     }
     '/salesman/quote': {
       id: '/salesman/quote'
@@ -1017,7 +998,6 @@ interface SalesmanRouteRouteChildren {
   SalesmanInvoicesRoute: typeof SalesmanInvoicesRoute
   SalesmanOverviewRoute: typeof SalesmanOverviewRoute
   SalesmanQuoteRoute: typeof SalesmanQuoteRoute
-  SalesmanTransactionRoute: typeof SalesmanTransactionRoute
   SalesmanIndexRoute: typeof SalesmanIndexRoute
 }
 
@@ -1026,7 +1006,6 @@ const SalesmanRouteRouteChildren: SalesmanRouteRouteChildren = {
   SalesmanInvoicesRoute: SalesmanInvoicesRoute,
   SalesmanOverviewRoute: SalesmanOverviewRoute,
   SalesmanQuoteRoute: SalesmanQuoteRoute,
-  SalesmanTransactionRoute: SalesmanTransactionRoute,
   SalesmanIndexRoute: SalesmanIndexRoute,
 }
 
