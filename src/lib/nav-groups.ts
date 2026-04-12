@@ -22,6 +22,7 @@ export type AppNavGroup = {
 	items: AppNavItem[];
 };
 
+// Shared cross-role links
 const sharedRoutesNavGroup: AppNavGroup = {
 	label: "Shared",
 	items: [
@@ -30,6 +31,7 @@ const sharedRoutesNavGroup: AppNavGroup = {
 	],
 };
 
+// Salesman primary routes
 const salesmanDashboardNavGroup: AppNavGroup = {
 	label: "Salesman",
 	items: [
@@ -38,20 +40,18 @@ const salesmanDashboardNavGroup: AppNavGroup = {
 	],
 };
 
+// Admin overview routes
 const adminOverviewNavGroup: AppNavGroup = {
 	label: "Admin Overview",
 	items: [
 		{ label: "Admin Dashboard", icon: BarChart3, to: "/admin/dashboard" },
-		{
-			label: "Analytics Inspector",
-			icon: BarChart3,
-			to: "/admin/analytics-inspector",
-		},
+		{ label: "Analytics", icon: BarChart3, to: "/admin/analytics-inspector" },
 		{ label: "Reports", icon: BarChart3, to: "/admin/reports" },
 		{ label: "System", icon: Shield, to: "/admin/system" },
 	],
 };
 
+// Admin finance routes
 const adminFinanceNavGroup: AppNavGroup = {
 	label: "Finance",
 	items: [
@@ -61,84 +61,38 @@ const adminFinanceNavGroup: AppNavGroup = {
 			icon: ArrowRightLeft,
 			to: "/admin/due-collection",
 		},
-		{ label: "Due Inspector", icon: FileText, to: "/admin/due-inspector" },
 		{ label: "Invoices", icon: FileText, to: "/admin/invoices" },
-		{
-			label: "Invoice Inspector",
-			icon: FileText,
-			to: "/admin/invoice-inspector",
-		},
 		{ label: "Payments", icon: ArrowRightLeft, to: "/admin/payments" },
-		{
-			label: "Payment Inspector",
-			icon: FileText,
-			to: "/admin/payment-inspector",
-		},
 		{ label: "Quotations", icon: ClipboardList, to: "/admin/quotations" },
-		{
-			label: "Quotation Inspector",
-			icon: FileText,
-			to: "/admin/quotation-inspector",
-		},
 	],
 };
 
+// Admin catalog routes
 const adminCatalogNavGroup: AppNavGroup = {
 	label: "Catalog",
 	items: [
 		{ label: "Categories", icon: ClipboardList, to: "/admin/categories" },
-		{
-			label: "Category Inspector",
-			icon: FileText,
-			to: "/admin/category-inspector",
-		},
 		{ label: "Inventory", icon: Package, to: "/admin/inventory" },
-		{
-			label: "Inventory Inspector",
-			icon: FileText,
-			to: "/admin/inventory-inspector",
-		},
 		{ label: "Lots", icon: Package, to: "/admin/lots" },
-		{ label: "Lot Inspector", icon: FileText, to: "/admin/lot-inspector" },
 		{ label: "Products", icon: Package, to: "/admin/products" },
-		{
-			label: "Product Inspector",
-			icon: FileText,
-			to: "/admin/product-inspector",
-		},
 		{ label: "Units", icon: Package, to: "/admin/units" },
-		{ label: "Unit Inspector", icon: FileText, to: "/admin/unit-inspector" },
 		{ label: "Variants", icon: Package, to: "/admin/variants" },
-		{
-			label: "Variant Inspector",
-			icon: FileText,
-			to: "/admin/variant-inspector",
-		},
 		{ label: "Variant Units", icon: Package, to: "/admin/variant-units" },
-		{
-			label: "Variant-Unit Inspector",
-			icon: FileText,
-			to: "/admin/variant-unit-inspector",
-		},
 	],
 };
 
+// Admin people routes
 const adminPeopleNavGroup: AppNavGroup = {
 	label: "People & Access",
 	items: [
 		{ label: "Customers", icon: Users, to: "/admin/customers" },
-		{
-			label: "Customer Inspector",
-			icon: Users,
-			to: "/admin/customer-inspector",
-		},
 		{ label: "Users", icon: UserCog, to: "/admin/users" },
-		{ label: "User Inspector", icon: FileText, to: "/admin/user-inspector" },
 		{ label: "Create User", icon: UserPlus, to: "/admin/create-user" },
 		{ label: "Update User", icon: UserCog, to: "/admin/update-user" },
 	],
 };
 
+// Admin integration routes
 const adminApiNavGroup: AppNavGroup = {
 	label: "API",
 	items: [
