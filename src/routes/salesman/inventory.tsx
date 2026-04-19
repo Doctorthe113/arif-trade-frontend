@@ -39,6 +39,7 @@ type InventoryLog = {
 	id: number;
 	product_name: string;
 	product_code: string;
+	expiry_date: string | null;
 	unit_name: string;
 	variant_attributes: unknown;
 	quantity: number;
@@ -79,6 +80,7 @@ type ProductDetail = {
 	id: number;
 	name: string;
 	product_code: string;
+	expiry_date: string | null;
 	category_id: number | null;
 	category_name: string | null;
 	variants: ProductVariant[];
@@ -116,6 +118,7 @@ const addInventorySchema = z.object({
 	productName: z.string().min(1, "Product name required"),
 	categoryId: z.string().optional(),
 	description: z.string().optional(),
+	expiryDate: z.string().optional(),
 	variantLabel: z.string().min(1, "Variant label required"),
 	sku: z.string().optional(),
 	unitId: z.string().min(1, "Unit required"),
@@ -169,6 +172,7 @@ function InventoryPage() {
 			productName: "",
 			categoryId: "",
 			description: "",
+			expiryDate: "",
 			variantLabel: "",
 			sku: "",
 			unitId: "",
@@ -243,6 +247,7 @@ function InventoryPage() {
 						? { category_id: Number.parseInt(values.categoryId, 10) }
 						: {}),
 					...(values.description ? { description: values.description } : {}),
+					...(values.expiryDate ? { expiry_date: values.expiryDate } : {}),
 				}),
 			});
 
@@ -277,6 +282,7 @@ function InventoryPage() {
 				productName: "",
 				categoryId: "",
 				description: "",
+				expiryDate: "",
 				variantLabel: "",
 				sku: "",
 				unitId: "",
@@ -400,6 +406,7 @@ function InventoryPage() {
 						id: unit.id,
 						product_name: product.name,
 						product_code: product.product_code,
+						expiry_date: product.expiry_date,
 						unit_name: unit.unit_name,
 						variant_attributes: variant.attributes,
 						quantity: unit.stock_quantity,
@@ -576,6 +583,20 @@ function InventoryPage() {
 								id="inventory-add-description"
 								placeholder="Enter description"
 								{...addForm.register("description")}
+							/>
+						</div>
+
+						<div className="flex flex-col gap-2">
+							<label
+								htmlFor="inventory-add-expiry"
+								className="text-sm font-medium"
+							>
+								Expiry Date (optional)
+							</label>
+							<Input
+								id="inventory-add-expiry"
+								type="date"
+								{...addForm.register("expiryDate")}
 							/>
 						</div>
 
@@ -857,6 +878,7 @@ function InventoryPage() {
 									<TableRow>
 										<TableHead>Product</TableHead>
 										<TableHead>Code</TableHead>
+										<TableHead>Expiry</TableHead>
 										<TableHead>
 											<Button
 												variant="ghost"
@@ -906,6 +928,7 @@ function InventoryPage() {
 											<TableCell className="font-mono text-xs">
 												{log.product_code}
 											</TableCell>
+											<TableCell>{log.expiry_date ?? "—"}</TableCell>
 											<TableCell>
 												{categoryLookup[log.product_name] || "—"}
 											</TableCell>

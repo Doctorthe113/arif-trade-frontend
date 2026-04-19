@@ -35,6 +35,7 @@ type InventoryRow = {
 	product_id: number;
 	product_name: string;
 	product_code: string;
+	expiry_date: string | null;
 	unit_name: string;
 	variant_attributes: Record<string, unknown> | null;
 };
@@ -154,7 +155,8 @@ function AdminInventoryPage() {
 	});
 
 	const deleteEntry = useMutation({
-		mutationFn: (id: number) => apiFetch(`/inventory/${id}`, { method: "DELETE" }),
+		mutationFn: (id: number) =>
+			apiFetch(`/inventory/${id}`, { method: "DELETE" }),
 		onSuccess: () => {
 			if (editId !== null) {
 				setEditId(null);
@@ -192,7 +194,9 @@ function AdminInventoryPage() {
 			<Card>
 				<CardHeader>
 					<CardTitle>Add Inventory Log Entry</CardTitle>
-					<CardDescription>Create a manual handover/sold/returned entry</CardDescription>
+					<CardDescription>
+						Create a manual handover/sold/returned entry
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="grid gap-3 md:grid-cols-3">
 					<Input
@@ -225,12 +229,17 @@ function AdminInventoryPage() {
 						value={createNote}
 						onChange={(e) => setCreateNote(e.target.value)}
 					/>
-					<Button onClick={() => createEntry.mutate()} disabled={createEntry.isPending}>
+					<Button
+						onClick={() => createEntry.mutate()}
+						disabled={createEntry.isPending}
+					>
 						{createEntry.isPending ? "Adding..." : "Add Entry"}
 					</Button>
 					{createEntry.isError ? (
 						<p className="text-destructive text-sm md:col-span-3">
-							{createEntry.error instanceof Error ? createEntry.error.message : "Failed"}
+							{createEntry.error instanceof Error
+								? createEntry.error.message
+								: "Failed"}
 						</p>
 					) : null}
 				</CardContent>
@@ -239,7 +248,9 @@ function AdminInventoryPage() {
 			<Card>
 				<CardHeader>
 					<CardTitle>Inventory Log</CardTitle>
-					<CardDescription>Filter and manage inventory movements</CardDescription>
+					<CardDescription>
+						Filter and manage inventory movements
+					</CardDescription>
 				</CardHeader>
 				<CardContent className="space-y-4">
 					<div className="grid gap-3 md:grid-cols-5">
@@ -295,13 +306,19 @@ function AdminInventoryPage() {
 					</div>
 
 					{logs.isLoading ? (
-						<p className="text-muted-foreground text-sm">Loading inventory log...</p>
+						<p className="text-muted-foreground text-sm">
+							Loading inventory log...
+						</p>
 					) : logs.isError ? (
 						<p className="text-destructive text-sm">
-							{logs.error instanceof Error ? logs.error.message : "Failed to load inventory log"}
+							{logs.error instanceof Error
+								? logs.error.message
+								: "Failed to load inventory log"}
 						</p>
 					) : !rows.length ? (
-						<p className="text-muted-foreground text-sm">No inventory log entries found.</p>
+						<p className="text-muted-foreground text-sm">
+							No inventory log entries found.
+						</p>
 					) : (
 						<Table>
 							<TableHeader>
@@ -309,6 +326,7 @@ function AdminInventoryPage() {
 									<TableHead>ID</TableHead>
 									<TableHead>Time</TableHead>
 									<TableHead>Product</TableHead>
+									<TableHead>Expiry</TableHead>
 									<TableHead>Variant</TableHead>
 									<TableHead>Action</TableHead>
 									<TableHead>Qty</TableHead>
@@ -323,13 +341,22 @@ function AdminInventoryPage() {
 										<TableCell>{row.created_at}</TableCell>
 										<TableCell>
 											<div className="font-medium">{row.product_name}</div>
-											<div className="text-muted-foreground text-xs">{row.product_code} | {row.unit_name}</div>
+											<div className="text-muted-foreground text-xs">
+												{row.product_code} | {row.unit_name}
+											</div>
 										</TableCell>
-										<TableCell className="max-w-[220px] text-xs">{formatAttributes(row.variant_attributes)}</TableCell>
+										<TableCell>{row.expiry_date ?? "-"}</TableCell>
+										<TableCell className="max-w-55 text-xs">
+											{formatAttributes(row.variant_attributes)}
+										</TableCell>
 										<TableCell>
-											<Badge variant={actionVariant(row.action)}>{row.action}</Badge>
+											<Badge variant={actionVariant(row.action)}>
+												{row.action}
+											</Badge>
 										</TableCell>
-										<TableCell>{Number(row.quantity).toLocaleString()}</TableCell>
+										<TableCell>
+											{Number(row.quantity).toLocaleString()}
+										</TableCell>
 										<TableCell>{row.user_name ?? "-"}</TableCell>
 										<TableCell className="flex gap-2">
 											<Button
@@ -340,7 +367,9 @@ function AdminInventoryPage() {
 													setEditVariantUnitId(String(row.variant_unit_id));
 													setEditQuantity(String(row.quantity));
 													setEditAction(row.action);
-													setEditRelatedId(row.related_id ? String(row.related_id) : "");
+													setEditRelatedId(
+														row.related_id ? String(row.related_id) : "",
+													);
 													setEditNote(row.note ?? "");
 												}}
 											>
@@ -369,21 +398,25 @@ function AdminInventoryPage() {
 								variant="outline"
 								size="sm"
 								disabled={(pagination?.page ?? 1) <= 1}
-								onClick={() => setPageNumber((currentPage) => Math.max(1, currentPage - 1))}
+								onClick={() =>
+									setPageNumber((currentPage) => Math.max(1, currentPage - 1))
+								}
 							>
 								Previous
 							</Button>
 							<Button
 								variant="outline"
 								size="sm"
-								disabled={(pagination?.page ?? 1) >= (pagination?.last_page ?? 1)}
+								disabled={
+									(pagination?.page ?? 1) >= (pagination?.last_page ?? 1)
+								}
 								onClick={() => setPageNumber((currentPage) => currentPage + 1)}
 							>
 								Next
 							</Button>
 						</div>
 					</div>
-					{(updateEntry.isError || deleteEntry.isError) ? (
+					{updateEntry.isError || deleteEntry.isError ? (
 						<p className="text-destructive text-sm">
 							{updateEntry.error instanceof Error
 								? updateEntry.error.message
@@ -432,7 +465,10 @@ function AdminInventoryPage() {
 							onChange={(e) => setEditNote(e.target.value)}
 						/>
 						<div className="flex gap-2">
-							<Button onClick={() => updateEntry.mutate()} disabled={updateEntry.isPending}>
+							<Button
+								onClick={() => updateEntry.mutate()}
+								disabled={updateEntry.isPending}
+							>
 								{updateEntry.isPending ? "Saving..." : "Save"}
 							</Button>
 							<Button
