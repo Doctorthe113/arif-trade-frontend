@@ -27,6 +27,9 @@ type LotRow = {
 	name: string;
 	description: string | null;
 	is_active: boolean;
+	expiry_date: string | null;
+	is_expired: boolean | number;
+	is_expiring_soon: boolean | number;
 	quantity_total: number;
 	quantity_sold: number;
 	quantity_left: number;
@@ -57,6 +60,17 @@ type PaginatedProducts = {
 	};
 };
 
+type ExpiringSoonLotRow = {
+	id?: number;
+	lot_id?: number;
+	name?: string;
+	lot_name?: string;
+	product_name?: string;
+	expiry_date?: string | null;
+	is_expired?: boolean | number;
+	is_expiring_soon?: boolean | number;
+};
+
 export const Route = createFileRoute("/admin/lots/")({
 	component: AdminLotsPage,
 });
@@ -71,6 +85,10 @@ function AdminLotsPage() {
 	const [selectedLotId, setSelectedLotId] = useState<number | null>(null);
 	const [stockVariantUnitId, setStockVariantUnitId] = useState("");
 	const [stockQty, setStockQty] = useState("");
+	const [expiryDaysValue, setExpiryDaysValue] = useState("90");
+	const [expiryDraftByLotId, setExpiryDraftByLotId] = useState<
+		Record<number, string>
+	>({});
 
 	const lots = useQuery({
 		queryKey: ["admin-lots", pageNumber, searchValue],
@@ -83,6 +101,14 @@ function AdminLotsPage() {
 	const products = useQuery({
 		queryKey: ["admin-products-for-lot"],
 		queryFn: () => apiFetch<PaginatedProducts>("/products?per_page=200&page=1"),
+	});
+
+	const expiringSoonLots = useQuery({
+		queryKey: ["admin-lots-expiring-soon", expiryDaysValue],
+		queryFn: () =>
+			apiFetch<ExpiringSoonLotRow[] | { data: ExpiringSoonLotRow[] }>(
+				`/lots/expiring-soon?days=${encodeURIComponent(expiryDaysValue)}`,
+			),
 	});
 
 	const createLot = useMutation({
@@ -132,6 +158,38 @@ function AdminLotsPage() {
 			queryClient.invalidateQueries({ queryKey: ["admin-lots"] });
 		},
 	});
+
+	const updateLotExpiry = useMutation({
+		mutationFn: ({
+			lotId,
+			expiryDate,
+		}: {
+			lotId: number;
+			expiryDate: string | null;
+		}) =>
+			apiFetch(`/lots/${lotId}`, {
+				method: "PUT",
+				body: JSON.stringify({ expiry_date: expiryDate }),
+			}),
+		onSuccess: (_, variables) => {
+			setExpiryDraftByLotId((currentDrafts) => ({
+				...currentDrafts,
+				[variables.lotId]: variables.expiryDate ?? "",
+			}));
+			queryClient.invalidateQueries({ queryKey: ["admin-lots"] });
+			queryClient.invalidateQueries({ queryKey: ["admin-lots-expiring-soon"] });
+		},
+	});
+
+	const isFlagOn = (value: boolean | number | undefined) =>
+		value === true || value === 1;
+
+	const getDraftExpiryValue = (lot: LotRow) =>
+		expiryDraftByLotId[lot.id] ?? lot.expiry_date ?? "";
+
+	const expiringSoonRows = Array.isArray(expiringSoonLots.data)
+		? expiringSoonLots.data
+		: (expiringSoonLots.data?.data ?? []);
 
 	return (
 		<div className="space-y-6">
@@ -244,45 +302,107 @@ function AdminLotsPage() {
 								<TableRow>
 									<TableHead>Lot</TableHead>
 									<TableHead>Product</TableHead>
+									<TableHead>Expiry</TableHead>
 									<TableHead>Left</TableHead>
+									<TableHead>Expiry Flags</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Action</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{lots.data.data.map((lot) => (
-									<TableRow key={lot.id}>
-										<TableCell>
-											<div className="font-medium">{lot.name}</div>
-											<div className="text-muted-foreground text-xs">#{lot.id}</div>
-										</TableCell>
-										<TableCell>{lot.product_name}</TableCell>
-										<TableCell>{lot.quantity_left.toLocaleString()}</TableCell>
-										<TableCell>{lot.is_active ? "active" : "archived"}</TableCell>
-										<TableCell className="flex gap-2">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() => setSelectedLotId(lot.id)}
-											>
-												Select
-											</Button>
-											{lot.is_active ? (
+								{lots.data.data.map((lot) => {
+									const expiryDraftValue = getDraftExpiryValue(lot);
+
+									return (
+										<TableRow key={lot.id}>
+											<TableCell>
+												<div className="font-medium">{lot.name}</div>
+												<div className="text-muted-foreground text-xs">#{lot.id}</div>
+											</TableCell>
+											<TableCell>{lot.product_name}</TableCell>
+											<TableCell className="min-w-56">
+												<div className="flex items-center gap-2">
+													<Input
+														type="date"
+														value={expiryDraftValue}
+														onChange={(e) =>
+															setExpiryDraftByLotId((currentDrafts) => ({
+																...currentDrafts,
+																[lot.id]: e.target.value,
+															}))
+														}
+													/>
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() =>
+															updateLotExpiry.mutate({
+																lotId: lot.id,
+																expiryDate: expiryDraftValue || null,
+															})
+														}
+														disabled={
+															updateLotExpiry.isPending ||
+															expiryDraftValue === (lot.expiry_date ?? "")
+														}
+													>
+														Save
+													</Button>
+												</div>
+											</TableCell>
+											<TableCell>{lot.quantity_left.toLocaleString()}</TableCell>
+											<TableCell>
+												<div className="flex flex-wrap gap-1">
+													{isFlagOn(lot.is_expired) ? (
+														<span className="rounded-md border px-2 py-0.5 text-xs">
+															expired
+														</span>
+													) : null}
+													{isFlagOn(lot.is_expiring_soon) ? (
+														<span className="rounded-md border px-2 py-0.5 text-xs">
+															expiring soon
+														</span>
+													) : null}
+													{!isFlagOn(lot.is_expired) && !isFlagOn(lot.is_expiring_soon) ? (
+														<span className="rounded-md border px-2 py-0.5 text-xs">
+															normal
+														</span>
+													) : null}
+												</div>
+											</TableCell>
+											<TableCell>{lot.is_active ? "active" : "archived"}</TableCell>
+											<TableCell className="flex gap-2">
 												<Button
 													variant="outline"
 													size="sm"
-													onClick={() => archiveLot.mutate(lot.id)}
-													disabled={archiveLot.isPending}
+													onClick={() => setSelectedLotId(lot.id)}
 												>
-													Archive
+													Select
 												</Button>
-											) : null}
-										</TableCell>
-									</TableRow>
-								))}
+												{lot.is_active ? (
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={() => archiveLot.mutate(lot.id)}
+														disabled={archiveLot.isPending}
+													>
+														Archive
+													</Button>
+												) : null}
+											</TableCell>
+										</TableRow>
+									);
+								})}
 							</TableBody>
 						</Table>
 					)}
+					{updateLotExpiry.isError ? (
+						<p className="text-destructive text-sm">
+							{updateLotExpiry.error instanceof Error
+								? updateLotExpiry.error.message
+								: "Failed to update lot expiry"}
+						</p>
+					) : null}
 
 					<div className="flex items-center justify-between">
 						<p className="text-muted-foreground text-xs">
@@ -307,6 +427,69 @@ function AdminLotsPage() {
 							</Button>
 						</div>
 					</div>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardHeader>
+					<CardTitle>Expiring Soon Lots</CardTitle>
+					<CardDescription>
+						Review lots from /lots/expiring-soon endpoint.
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="flex items-center gap-2">
+						<Input
+							type="number"
+							min={1}
+							placeholder="Days"
+							value={expiryDaysValue}
+							onChange={(e) => setExpiryDaysValue(e.target.value || "1")}
+						/>
+					</div>
+
+					{expiringSoonLots.isLoading ? (
+						<p className="text-muted-foreground text-sm">Loading expiring lots...</p>
+					) : expiringSoonLots.isError ? (
+						<p className="text-destructive text-sm">
+							{expiringSoonLots.error instanceof Error
+								? expiringSoonLots.error.message
+								: "Failed to load expiring lots"}
+						</p>
+					) : !expiringSoonRows.length ? (
+						<p className="text-muted-foreground text-sm">No expiring lots found.</p>
+					) : (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Lot</TableHead>
+									<TableHead>Product</TableHead>
+									<TableHead>Expiry</TableHead>
+									<TableHead>Status</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{expiringSoonRows.map((lot, index) => {
+									const rowId = lot.lot_id ?? lot.id ?? index;
+									const lotLabel = lot.lot_name ?? lot.name ?? `#${rowId}`;
+									return (
+										<TableRow key={rowId}>
+											<TableCell>{lotLabel}</TableCell>
+											<TableCell>{lot.product_name ?? "-"}</TableCell>
+											<TableCell>{lot.expiry_date ?? "-"}</TableCell>
+											<TableCell>
+												{isFlagOn(lot.is_expired)
+													? "expired"
+													: isFlagOn(lot.is_expiring_soon)
+														? "expiring soon"
+														: "normal"}
+											</TableCell>
+										</TableRow>
+									);
+								})}
+							</TableBody>
+						</Table>
+					)}
 				</CardContent>
 			</Card>
 		</div>

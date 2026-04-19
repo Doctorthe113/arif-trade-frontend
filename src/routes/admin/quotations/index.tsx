@@ -53,7 +53,6 @@ function AdminQuotationsPage() {
 	const queryClient = useQueryClient();
 	const [pageNumber, setPageNumber] = useState(1);
 	const [statusFilter, setStatusFilter] = useState("");
-	const [acceptCustomerIdByQuoteId, setAcceptCustomerIdByQuoteId] = useState<Record<number, string>>({});
 	const [noteDraftByQuoteId, setNoteDraftByQuoteId] = useState<Record<number, string>>({});
 
 	const quotations = useQuery({
@@ -172,7 +171,6 @@ function AdminQuotationsPage() {
 								{rows.map((row) => {
 									const isPending = row.status === "pending";
 									const noteValue = noteDraftByQuoteId[row.id] ?? row.note ?? "";
-									const customerInputValue = acceptCustomerIdByQuoteId[row.id] ?? (row.customer_id ? String(row.customer_id) : "");
 									return (
 										<TableRow key={row.id}>
 											<TableCell>{row.id}</TableCell>
@@ -184,7 +182,7 @@ function AdminQuotationsPage() {
 											</TableCell>
 											<TableCell>
 												{isPending ? (
-													<div className="flex w-[250px] gap-2">
+													<div className="flex w-62.5 gap-2">
 														<Input
 															value={noteValue}
 															onChange={(event) =>
@@ -212,32 +210,18 @@ function AdminQuotationsPage() {
 											<TableCell className="space-y-2">
 												{isPending ? (
 													<>
-														<div className="flex w-[220px] gap-2">
-															<Input
-																placeholder="Customer ID for accept"
-																value={customerInputValue}
-																onChange={(event) =>
-																	setAcceptCustomerIdByQuoteId((prev) => ({
-																		...prev,
-																		[row.id]: event.target.value,
-																	}))
-																}
-															/>
-														</div>
 														<div className="flex flex-wrap gap-2">
 															<Button
 																variant="outline"
 																size="sm"
-																onClick={() => {
-																	const raw = customerInputValue.trim();
-																	if (!raw) return;
+																onClick={() =>
 																	statusMutation.mutate({
 																		quotationId: row.id,
 																		status: "accepted",
-																		customerId: Number(raw),
-																	});
-																}}
-																disabled={statusMutation.isPending || !customerInputValue.trim()}
+																		...(row.customer_id ? { customerId: row.customer_id } : {}),
+																	})
+																}
+																disabled={statusMutation.isPending || !row.customer_id}
 															>
 																Accept
 															</Button>
@@ -260,6 +244,11 @@ function AdminQuotationsPage() {
 																Delete
 															</Button>
 														</div>
+														{!row.customer_id ? (
+															<p className="text-muted-foreground text-xs">
+																Accept disabled: quotation has no customer.
+															</p>
+														) : null}
 													</>
 												) : row.status === "accepted" ? (
 													<Button
