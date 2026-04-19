@@ -1,10 +1,18 @@
-import { useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 import { Button } from "#/components/ui/button";
 
 type ThemeMode = "light" | "dark" | "auto";
+type ResolvedThemeMode = "light" | "dark";
+type TransitionDocument = Document & {
+	startViewTransition?: Document["startViewTransition"];
+};
 
-function getInitialMode(): ThemeMode {
+function prefersDarkMode(): boolean {
+	return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function getStoredMode(): ThemeMode {
 	if (typeof window === "undefined") {
 		return "auto";
 	}
@@ -18,8 +26,8 @@ function getInitialMode(): ThemeMode {
 }
 
 function applyThemeMode(mode: ThemeMode) {
-	const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-	const resolved = mode === "auto" ? (prefersDark ? "dark" : "light") : mode;
+	const resolved =
+		mode === "auto" ? (prefersDarkMode() ? "dark" : "light") : mode;
 
 	document.documentElement.classList.remove("light", "dark");
 	document.documentElement.classList.add(resolved);
@@ -33,8 +41,55 @@ function applyThemeMode(mode: ThemeMode) {
 	document.documentElement.style.colorScheme = resolved;
 }
 
+function resolveThemeMode(mode: ThemeMode): ResolvedThemeMode {
+	if (mode === "auto") {
+		return prefersDarkMode() ? "dark" : "light";
+	}
+
+	return mode;
+}
+
+function getNextMode(mode: ThemeMode): ThemeMode {
+	if (mode === "light") {
+		return "dark";
+	}
+
+	if (mode === "dark") {
+		return "auto";
+	}
+
+	return "light";
+}
+
+function getTransitionOrigin(event: MouseEvent<HTMLButtonElement>): {
+	x: number;
+	y: number;
+	radius: number;
+} {
+	const rect = event.currentTarget.getBoundingClientRect();
+	const x = event.clientX || rect.left + rect.width / 2;
+	const y = event.clientY || rect.top + rect.height / 2;
+	const radius = Math.ceil(
+		Math.hypot(
+			Math.max(x, window.innerWidth - x),
+			Math.max(y, window.innerHeight - y),
+		),
+	);
+
+	return { x, y, radius };
+}
+
+function canUseViewTransition(documentRef: TransitionDocument): boolean {
+	if (typeof documentRef.startViewTransition !== "function") {
+		return false;
+	}
+
+	return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 export default function ThemeToggle() {
-	const [mode, setMode] = useState<ThemeMode>(() => getInitialMode());
+	const [mode, setMode] = useState<ThemeMode>(() => getStoredMode());
+	const isTransitioningRef = useRef(false);
 
 	useEffect(() => {
 		applyThemeMode(mode);
@@ -55,10 +110,48 @@ export default function ThemeToggle() {
 		};
 	}, [mode]);
 
-	function toggleMode() {
-		const nextMode: ThemeMode =
-			mode === "light" ? "dark" : mode === "dark" ? "auto" : "light";
-		setMode(nextMode);
+	function toggleMode(event: MouseEvent<HTMLButtonElement>) {
+		if (isTransitioningRef.current) {
+			return;
+		}
+
+		const nextMode = getNextMode(mode);
+		const transitionDocument = document as TransitionDocument;
+		const hasVisualThemeChange =
+			resolveThemeMode(mode) !== resolveThemeMode(nextMode);
+
+		if (!canUseViewTransition(transitionDocument) || !hasVisualThemeChange) {
+			setMode(nextMode);
+			return;
+		}
+
+		const root = document.documentElement;
+		const { x, y, radius } = getTransitionOrigin(event);
+
+		root.style.setProperty("--x", `${x}px`);
+		root.style.setProperty("--y", `${y}px`);
+		root.style.setProperty("--theme-transition-radius", `${radius}px`);
+
+		isTransitioningRef.current = true;
+		try {
+			const transition = transitionDocument.startViewTransition?.(() => {
+				setMode(nextMode);
+				applyThemeMode(nextMode);
+			});
+
+			if (!transition) {
+				setMode(nextMode);
+				isTransitioningRef.current = false;
+				return;
+			}
+
+			void transition.finished.finally(() => {
+				isTransitioningRef.current = false;
+			});
+		} catch {
+			isTransitioningRef.current = false;
+			setMode(nextMode);
+		}
 	}
 
 	const label =
