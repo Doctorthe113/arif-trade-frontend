@@ -13,12 +13,13 @@ export const Route = createFileRoute("/admin")({
 /// Admin layout with nav
 function AdminLayout() {
 	const { hasRole } = useAuth();
+	const isSuperAdminUser = isAuthDisabled || hasRole("superadmin");
 
 	if (!isAuthDisabled && !hasRole("superadmin")) {
 		return <Navigate to="/" />;
 	}
 
-	const navGroups = getAdminNavGroups();
+	const navGroups = getAdminNavGroups(isSuperAdminUser);
 
 	return (
 		<AppLayout

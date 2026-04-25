@@ -109,7 +109,15 @@ const adminSemanticNavGroups: AppNavGroup[] = [
 	adminApiNavGroup,
 ];
 
-export function getAdminNavGroups(): AppNavGroup[] {
+export function getAdminNavGroups(isSuperAdminUser: boolean): AppNavGroup[] {
+	if (isSuperAdminUser) {
+		return [
+			sharedRoutesNavGroup,
+			salesmanDashboardNavGroup,
+			...adminSemanticNavGroups,
+		];
+	}
+
 	return [sharedRoutesNavGroup, ...adminSemanticNavGroups];
 }
 

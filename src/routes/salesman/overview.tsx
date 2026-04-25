@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Calendar } from "#/components/ui/calendar";
 import {
 	Card,
 	CardContent,
@@ -152,40 +153,55 @@ function OverviewPage() {
 		(inv) => inv.status === "active",
 	).length;
 
+	const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+		new Date(),
+	);
+
 	if (!canAccessSalesmanDashboard) return <Navigate to="/salesman/inventory" />;
 
 	return (
 		<div className="space-y-6">
 			<h1 className="text-2xl font-bold">Overview</h1>
 
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
 				<Card>
 					<CardHeader className="pb-2">
-						<CardDescription>Total Customers</CardDescription>
-						<CardTitle className="text-3xl">{totalCustomers}</CardTitle>
+						<CardTitle>Total Customers</CardTitle>
+						<CardDescription className="text-3xl">
+							{totalCustomers}
+						</CardDescription>
+					</CardHeader>
+					<CardHeader className="mt-4">
+						<CardTitle>Active Invoices</CardTitle>
+						<CardDescription className="text-3xl">
+							{activeInvoices}
+						</CardDescription>
 					</CardHeader>
 				</Card>
 				<Card>
 					<CardHeader className="pb-2">
-						<CardDescription>Total Revenue</CardDescription>
-						<CardTitle className="text-3xl">
+						<CardTitle>Total Revenue</CardTitle>
+						<CardDescription className="text-3xl">
 							৳{totalRevenueTaka.toLocaleString()}
-						</CardTitle>
+						</CardDescription>
 					</CardHeader>
-				</Card>
-				<Card>
-					<CardHeader className="pb-2">
-						<CardDescription>Total Due</CardDescription>
-						<CardTitle className="text-3xl text-destructive">
+					<CardHeader className="mt-4">
+						<CardTitle>Total Due</CardTitle>
+						<CardDescription className="text-3xl text-destructive">
 							৳{totalDueTaka.toLocaleString()}
-						</CardTitle>
+						</CardDescription>
 					</CardHeader>
 				</Card>
-				<Card>
-					<CardHeader className="pb-2">
-						<CardDescription>Active Invoices</CardDescription>
-						<CardTitle className="text-3xl">{activeInvoices}</CardTitle>
-					</CardHeader>
+				<Card className="min-w-md">
+					<CardContent className="p-0 flex justify-center">
+						<Calendar
+							mode="single"
+							captionLayout="dropdown"
+							selected={selectedDate}
+							onSelect={setSelectedDate}
+							className="h-full w-full max-w-sm rounded-lg border-0"
+						/>
+					</CardContent>
 				</Card>
 			</div>
 
